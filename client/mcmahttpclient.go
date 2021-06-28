@@ -3,9 +3,10 @@ package mcmaclient
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/ebu/mcma-libraries-go/model"
 	"io"
 	"net/http"
+
+	"github.com/ebu/mcma-libraries-go/model"
 )
 
 type McmaHttpClient struct {
