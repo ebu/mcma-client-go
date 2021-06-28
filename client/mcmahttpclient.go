@@ -1,7 +1,7 @@
 package mcmaclient
 
 import (
-	"./model"
+	"../model"
 	"encoding/base64"
 	"encoding/json"
 	"io"

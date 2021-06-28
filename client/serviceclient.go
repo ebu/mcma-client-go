@@ -1,7 +1,7 @@
 package mcmaclient
 
 import (
-	"./model"
+	"../model"
 	"net/http"
 )
 

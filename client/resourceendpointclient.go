@@ -1,7 +1,7 @@
 package mcmaclient
 
 import (
-	"./model"
+	"../model"
 	"encoding/json"
 	"fmt"
 	"io"
