@@ -1,9 +1,9 @@
 package mcmaclient
 
 import (
-	"../model"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/ebu/mcma-libraries-go/model"
 	"io"
 	"net/http"
 )

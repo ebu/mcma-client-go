@@ -1,7 +1,7 @@
 package mcmaclient
 
 import (
-	"../model"
+	"github.com/ebu/mcma-libraries-go/model"
 	"net/http"
 )
 
