@@ -8,4 +8,4 @@ type Authenticator interface {
 	Authenticate(req *http.Request) error
 }
 
-type AuthenticatorFactory func(authContext interface{}) Authenticator
+type AuthenticatorFactory func(authContext interface{}) (Authenticator, error)

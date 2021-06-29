@@ -1,6 +1,7 @@
 package mcmaclient
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/signer/v4"
@@ -44,7 +45,20 @@ func NewAWS4Authenticator(authContext AWS4AuthContext) AWS4Authenticator {
 }
 
 func (resourceManager *ResourceManager) AddAWS4Auth() {
-	resourceManager.AddAuth("AWS4", func(authContext interface{}) Authenticator {
-		return NewAWS4Authenticator(authContext.(AWS4AuthContext))
+	resourceManager.AddAuth("AWS4", func(authContext interface{}) (Authenticator, error) {
+		var ac interface{}
+		switch authContext.(type) {
+		case string:
+			if err := json.Unmarshal([]byte(authContext.(string)), ac); err != nil {
+				return nil, err
+			}
+		default:
+			ac = authContext
+		}
+		aws4AuthContext, isAws4AuthContext := ac.(AWS4AuthContext)
+		if !isAws4AuthContext {
+			return nil, fmt.Errorf("invalid AWS4 auth context")
+		}
+		return NewAWS4Authenticator(aws4AuthContext), nil
 	})
 }
