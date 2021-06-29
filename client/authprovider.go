@@ -52,7 +52,7 @@ func (authProvider *AuthProvider) Get(authType string, authContext interface{}) 
 		return nil, fmt.Errorf("no authenticators registered for auth type '%s'", authType)
 	}
 
-	authenticator := authenticatorFactory.Get(authContext)
+	authenticator := authenticatorFactory(authContext)
 	authProvider.cache[cacheKey] = authenticator
 
 	return authProvider.cache[cacheKey], nil

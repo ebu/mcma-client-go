@@ -22,7 +22,7 @@ type AWS4Authenticator struct {
 	service string
 }
 
-func (aws4Auth *AWS4Authenticator) Authenticate(req *http.Request) error {
+func (aws4Auth AWS4Authenticator) Authenticate(req *http.Request) error {
 	var seekableBody io.ReadSeeker
 	if req.Body != nil {
 		var canSeek bool
@@ -41,4 +41,10 @@ func NewAWS4Authenticator(authContext AWS4AuthContext) AWS4Authenticator {
 		region:  authContext.Region,
 		service: "execute-api",
 	}
+}
+
+func (resourceManager *ResourceManager) AddAWS4Auth() {
+	resourceManager.AddAuth("AWS4", func(authContext interface{}) Authenticator {
+		return NewAWS4Authenticator(authContext.(AWS4AuthContext))
+	})
 }
