@@ -1,11 +1,11 @@
 package mcmaclient
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 	"github.com/ebu/mcma-libraries-go/model"
-	"io"
 	"net/http"
+	"reflect"
 	"strings"
 )
 
@@ -17,7 +17,6 @@ type ResourceEndpointClient struct {
 	serviceAuthContext interface{}
 	tracker            model.McmaTracker
 	mcmaHttpClient     *McmaHttpClient
-	httpEndpoint       string
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*McmaHttpClient, error) {
@@ -31,7 +30,7 @@ func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*Mcma
 	}
 
 	authContext := resourceEndpointClient.resourceEndpoint.AuthContext
-	if authContext == "" {
+	if authContext == nil {
 		authContext = resourceEndpointClient.serviceAuthContext
 	}
 
@@ -53,23 +52,53 @@ func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*Mcma
 	return resourceEndpointClient.mcmaHttpClient, nil
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) getFullUrl(url string) string {
+func (resourceEndpointClient ResourceEndpointClient) getFullUrl(url string) string {
 	if url == "" {
-		return resourceEndpointClient.httpEndpoint
+		return resourceEndpointClient.resourceEndpoint.HttpEndpoint
 	}
-	if strings.HasPrefix(strings.ToLower(url), strings.ToLower(resourceEndpointClient.httpEndpoint)) {
+	if strings.HasPrefix(strings.ToLower(url), strings.ToLower(resourceEndpointClient.resourceEndpoint.HttpEndpoint)) {
 		return url
 	}
-	return strings.TrimSuffix(resourceEndpointClient.httpEndpoint, "/") + "/" + url
+	return strings.TrimSuffix(resourceEndpointClient.resourceEndpoint.HttpEndpoint, "/") + "/" + url
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) Query(url string, queryParameters []struct {
+func (resourceEndpointClient ResourceEndpointClient) hasMatchingHttpEndpoint(url string) bool {
+	return strings.HasPrefix(strings.ToLower(url), strings.ToLower(resourceEndpointClient.resourceEndpoint.HttpEndpoint))
+}
+
+func (resourceEndpointClient ResourceEndpointClient) getHttpEndpoint() string {
+	return resourceEndpointClient.resourceEndpoint.HttpEndpoint
+}
+
+func (resourceEndpointClient *ResourceEndpointClient) execute(t reflect.Type, url string, body interface{}, execute func(mcmaHttpClient *McmaHttpClient, url string, body *bytes.Reader) (*http.Response, error)) (interface{}, error) {
+	mcmaHttpClient, err := resourceEndpointClient.getMcmaHttpClient()
+	if err != nil {
+		return nil, err
+	}
+
+	url = resourceEndpointClient.getFullUrl(url)
+	reqBody, err := getJsonReqBody(body)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := execute(mcmaHttpClient, url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+	if t == nil {
+		return nil, nil
+	}
+	return readJsonRespBody(resp, t)
+}
+
+func (resourceEndpointClient *ResourceEndpointClient) Query(t reflect.Type, url string, queryParameters []struct {
 	key   string
 	value string
 }) (model.QueryResults, error) {
+	var queryResults model.QueryResults
 	mcmaHttpClient, err := resourceEndpointClient.getMcmaHttpClient()
 	if err != nil {
-		return model.QueryResults{}, err
+		return queryResults, err
 	}
 
 	url = resourceEndpointClient.getFullUrl(url)
@@ -80,58 +109,49 @@ func (resourceEndpointClient *ResourceEndpointClient) Query(url string, queryPar
 		}
 	}
 
-	getResp, err := mcmaHttpClient.Get(url)
+	getResp, err := mcmaHttpClient.Get(url, true)
 	if err != nil {
-		return model.QueryResults{}, err
+		return queryResults, fmt.Errorf("failed to query %v: %v", url, err)
 	}
 
-	var body []byte
-	_, err = getResp.Body.Read(body)
+	body, err := readJsonRespBody(getResp, reflect.TypeOf(queryResults))
 	if err != nil {
-		return model.QueryResults{}, err
+		return queryResults, fmt.Errorf("failed to get query results for %v: %v", url, err)
 	}
 
-	queryResults := model.QueryResults{}
-	err = json.Unmarshal(body, &queryResults)
+	queryResults = body.(model.QueryResults)
+
+	results, err := queryResults.GetResults(t)
+	if err != nil {
+		return queryResults, fmt.Errorf("failed to get typed query results for %v: %v", url, err)
+	}
+
+	queryResults.Results = results
 
 	return queryResults, err
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) execute(url string, body interface{}, execute func(mcmaHttpClient *McmaHttpClient, url string, body io.Reader) (interface{}, error)) (interface{}, error) {
-	mcmaHttpClient, err := resourceEndpointClient.getMcmaHttpClient()
-	if err != nil {
-		return nil, err
-	}
-
-	url = resourceEndpointClient.getFullUrl(url)
-	reqBody, err := getJsonBody(body)
-	if err != nil {
-		return nil, err
-	}
-
-	return execute(mcmaHttpClient, url, reqBody)
-}
-
-func (resourceEndpointClient *ResourceEndpointClient) Get(url string) (interface{}, error) {
-	return resourceEndpointClient.execute(url, nil, func(client *McmaHttpClient, url string, body io.Reader) (interface{}, error) {
-		return client.Get(url)
+func (resourceEndpointClient *ResourceEndpointClient) Get(t reflect.Type, url string) (interface{}, error) {
+	return resourceEndpointClient.execute(t, url, nil, func(client *McmaHttpClient, url string, body *bytes.Reader) (*http.Response, error) {
+		return client.Get(url, false)
 	})
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) Post(url string, body interface{}) (interface{}, error) {
-	return resourceEndpointClient.execute(url, body, func(client *McmaHttpClient, url string, body io.Reader) (interface{}, error) {
+func (resourceEndpointClient *ResourceEndpointClient) Post(t reflect.Type, url string, body interface{}) (interface{}, error) {
+	return resourceEndpointClient.execute(t, url, body, func(client *McmaHttpClient, url string, body *bytes.Reader) (*http.Response, error) {
 		return client.Post(url, body)
 	})
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) Put(url string, body interface{}) (interface{}, error) {
-	return resourceEndpointClient.execute(url, body, func(client *McmaHttpClient, url string, body io.Reader) (interface{}, error) {
+func (resourceEndpointClient *ResourceEndpointClient) Put(t reflect.Type, url string, body interface{}) (interface{}, error) {
+	return resourceEndpointClient.execute(t, url, body, func(client *McmaHttpClient, url string, body *bytes.Reader) (*http.Response, error) {
 		return client.Put(url, body)
 	})
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) Delete(url string) (interface{}, error) {
-	return resourceEndpointClient.execute(url, nil, func(client *McmaHttpClient, url string, body io.Reader) (interface{}, error) {
+func (resourceEndpointClient *ResourceEndpointClient) Delete(url string) error {
+	_, err := resourceEndpointClient.execute(nil, url, nil, func(client *McmaHttpClient, url string, body *bytes.Reader) (*http.Response, error) {
 		return client.Delete(url)
 	})
+	return err
 }

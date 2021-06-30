@@ -30,7 +30,7 @@ func (authProvider *AuthProvider) Get(authType string, authContext interface{}) 
 	default:
 		authContextJson, err := json.Marshal(v)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Failed to marshal auth context to json: %v")
 		}
 		authContextStr = string(authContextJson)
 	}
@@ -52,7 +52,10 @@ func (authProvider *AuthProvider) Get(authType string, authContext interface{}) 
 		return nil, fmt.Errorf("no authenticators registered for auth type '%s'", authType)
 	}
 
-	authenticator := authenticatorFactory(authContext)
+	authenticator, err := authenticatorFactory(authContext)
+	if err != nil {
+		return nil, err
+	}
 	authProvider.cache[cacheKey] = authenticator
 
 	return authProvider.cache[cacheKey], nil

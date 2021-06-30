@@ -3,6 +3,8 @@ package mcmaclient
 import (
 	"github.com/ebu/mcma-libraries-go/model"
 	"net/http"
+	"reflect"
+	"strings"
 )
 
 type ServiceClient struct {
@@ -33,7 +35,9 @@ func (serviceClient *ServiceClient) loadResources() {
 	}
 }
 
-func (serviceClient *ServiceClient) GetResourceEndpointClient(resourceType string) (*ResourceEndpointClient, bool) {
+func (serviceClient *ServiceClient) GetResourceEndpointClient(t reflect.Type) (*ResourceEndpointClient, bool) {
+	resourceTypeParts := strings.Split(t.String(), ".")
+	resourceType := resourceTypeParts[len(resourceTypeParts)-1]
 	serviceClient.loadResources()
 	resourceEndpoint, found := serviceClient.resourcesByType[resourceType]
 	return resourceEndpoint, found
