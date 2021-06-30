@@ -36,19 +36,19 @@ func (client *McmaHttpClient) Get(url string, throwOn404 bool) (*http.Response, 
 
 func (client *McmaHttpClient) Post(url string, body *bytes.Reader) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, nopCloser{body})
-	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Content-Type", "application/json")
 	return client.Send(req, true)
 }
 
 func (client *McmaHttpClient) Put(url string, body *bytes.Reader) (*http.Response, error) {
 	req, err := http.NewRequest("PUT", url, nopCloser{body})
-	req.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Content-Type", "application/json")
 	return client.Send(req, true)
 }
 

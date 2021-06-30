@@ -20,6 +20,9 @@ func getJsonReqBody(body interface{}) (*bytes.Reader, error) {
 }
 
 func readJsonRespBody(resp *http.Response, t reflect.Type) (interface{}, error) {
+	if resp.StatusCode == 404 {
+		return nil, nil
+	}
 	r := reflect.New(t)
 	if resp.ContentLength == 0 {
 		return r.Elem().Interface(), nil
