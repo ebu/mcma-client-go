@@ -183,7 +183,7 @@ func (resourceManager *ResourceManager) QueryMaps(resourceType string, filter []
 	return results, nil
 }
 
-func (resourceManager *ResourceManager) GetMap(resourceType string, resourceId string) (interface{}, error) {
+func (resourceManager *ResourceManager) GetMap(resourceType string, resourceId string) (map[string]interface{}, error) {
 	if len(resourceManager.services) == 0 {
 		err := resourceManager.Init()
 		if err != nil {
@@ -195,7 +195,18 @@ func (resourceManager *ResourceManager) GetMap(resourceType string, resourceId s
 			return resourceEndpointClient.GetMap(resourceId)
 		}
 	}
-	return resourceManager.getMcmaHttpClient().Get(resourceId, false)
+	resp, err := resourceManager.getMcmaHttpClient().Get(resourceId, false)
+	if err != nil {
+		return nil, err
+	}
+
+	var m map[string]interface{}
+	resource, err := readJsonRespBody(resp, reflect.TypeOf(m))
+	if err != nil {
+		return nil, err
+	}
+
+	return resource.(map[string]interface{}), nil
 }
 
 func (resourceManager *ResourceManager) Get(t reflect.Type, resourceId string) (interface{}, error) {
@@ -212,7 +223,17 @@ func (resourceManager *ResourceManager) Get(t reflect.Type, resourceId string) (
 			}
 		}
 	}
-	return resourceManager.getMcmaHttpClient().Get(resourceId, false)
+	resp, err := resourceManager.getMcmaHttpClient().Get(resourceId, false)
+	if err != nil {
+		return nil, err
+	}
+
+	resource, err := readJsonRespBody(resp, t)
+	if err != nil {
+		return nil, err
+	}
+
+	return resource, nil
 }
 
 func (resourceManager *ResourceManager) Create(resource interface{}) (interface{}, error) {
@@ -263,7 +284,18 @@ func (resourceManager *ResourceManager) Create(resource interface{}) (interface{
 		return nil, err
 	}
 
-	return resourceManager.getMcmaHttpClient().Post(id, jsonBody)
+	resp, err := resourceManager.getMcmaHttpClient().Post(id, jsonBody)
+	if err != nil {
+		return nil, err
+	}
+
+	createdResource, err := readJsonRespBody(resp, t)
+	if err != nil {
+		return nil, err
+	}
+
+	return createdResource, nil
+
 }
 
 func (resourceManager *ResourceManager) Update(resource interface{}) (interface{}, error) {
@@ -313,7 +345,17 @@ func (resourceManager *ResourceManager) Update(resource interface{}) (interface{
 		return nil, err
 	}
 
-	return resourceManager.getMcmaHttpClient().Put(id, jsonBody)
+	resp, err := resourceManager.getMcmaHttpClient().Put(id, jsonBody)
+	if err != nil {
+		return nil, err
+	}
+
+	createdResource, err := readJsonRespBody(resp, t)
+	if err != nil {
+		return nil, err
+	}
+
+	return createdResource, nil
 }
 
 func (resourceManager *ResourceManager) Delete(t reflect.Type, resourceId string) error {

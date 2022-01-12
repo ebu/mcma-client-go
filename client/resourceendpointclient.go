@@ -168,9 +168,13 @@ func (resourceEndpointClient *ResourceEndpointClient) Get(t reflect.Type, url st
 	})
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) GetMap(url string) (interface{}, error) {
+func (resourceEndpointClient *ResourceEndpointClient) GetMap(url string) (map[string]interface{}, error) {
 	var m map[string]interface{}
-	return resourceEndpointClient.Get(reflect.TypeOf(m), url)
+	mi, err := resourceEndpointClient.Get(reflect.TypeOf(m), url)
+	if err != nil {
+		return nil, err
+	}
+	return mi.(map[string]interface{}), nil
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) Post(t reflect.Type, url string, body interface{}) (interface{}, error) {
