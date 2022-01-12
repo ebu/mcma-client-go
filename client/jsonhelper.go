@@ -24,7 +24,13 @@ func readJsonRespBody(resp *http.Response, t reflect.Type) (interface{}, error) 
 	if resp.StatusCode == 404 {
 		return nil, nil
 	}
-	r := reflect.New(t)
+	var r reflect.Value
+	if t.Kind() != reflect.Map {
+		r = reflect.New(t)
+	} else {
+		var m map[string]interface{}
+		r = reflect.MakeMap(reflect.TypeOf(m))
+	}
 	if resp.ContentLength == 0 {
 		return r.Elem().Interface(), nil
 	}

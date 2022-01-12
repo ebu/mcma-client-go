@@ -56,11 +56,32 @@ func (resourceManager *ResourceManager) getServiceRegistryClient() *ServiceClien
 	return resourceManager.serviceRegistryClient
 }
 
+func (resourceManager *ResourceManager) getResourceEndpoint(url string) (*ResourceEndpointClient, error) {
+	if url == "" {
+		return nil, nil
+	}
+	if len(resourceManager.services) == 0 {
+		err := resourceManager.Init()
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, s := range resourceManager.services {
+		s.loadResources()
+		for _, r := range s.resources {
+			if r.hasMatchingHttpEndpoint(url) {
+				return r, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
 func (resourceManager *ResourceManager) Init() error {
 	serviceRegistryClient := resourceManager.getServiceRegistryClient()
 	resourceManager.services = append(resourceManager.services[:0], serviceRegistryClient)
 
-	servicesEndpoint, found := serviceRegistryClient.GetResourceEndpointClient(reflect.TypeOf(model.Service{}))
+	servicesEndpoint, found := serviceRegistryClient.GetResourceEndpointClientByType(reflect.TypeOf(model.Service{}))
 	if !found {
 		return fmt.Errorf("service resource endpoint not found")
 	}
@@ -84,27 +105,6 @@ func (resourceManager *ResourceManager) Init() error {
 	return nil
 }
 
-func (resourceManager *ResourceManager) getResourceEndpoint(url string) (*ResourceEndpointClient, error) {
-	if url == "" {
-		return nil, nil
-	}
-	if len(resourceManager.services) == 0 {
-		err := resourceManager.Init()
-		if err != nil {
-			return nil, err
-		}
-	}
-	for _, s := range resourceManager.services {
-		s.loadResources()
-		for _, r := range s.resources {
-			if r.hasMatchingHttpEndpoint(url) {
-				return r, nil
-			}
-		}
-	}
-	return nil, nil
-}
-
 func (resourceManager *ResourceManager) Query(t reflect.Type, filter []struct {
 	key   string
 	value string
@@ -120,7 +120,7 @@ func (resourceManager *ResourceManager) Query(t reflect.Type, filter []struct {
 	var results []interface{}
 	var errs []string
 	for _, s := range resourceManager.services {
-		if resourceEndpointClient, matched := s.GetResourceEndpointClient(t); matched {
+		if resourceEndpointClient, matched := s.GetResourceEndpointClientByType(t); matched {
 			if _, alreadyUsed := usedHttpEndpoints[resourceEndpointClient.getHttpEndpoint()]; alreadyUsed {
 				continue
 			}
@@ -144,6 +144,60 @@ func (resourceManager *ResourceManager) Query(t reflect.Type, filter []struct {
 	return results, nil
 }
 
+func (resourceManager *ResourceManager) QueryMaps(resourceType string, filter []struct {
+	key   string
+	value string
+}) ([]interface{}, error) {
+	if len(resourceManager.services) == 0 {
+		err := resourceManager.Init()
+		if err != nil {
+			return nil, err
+		}
+	}
+	anyMatchingClients := false
+	usedHttpEndpoints := make(map[string]struct{})
+	var results []interface{}
+	var errs []string
+	for _, s := range resourceManager.services {
+		if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType); matched {
+			if _, alreadyUsed := usedHttpEndpoints[resourceEndpointClient.getHttpEndpoint()]; alreadyUsed {
+				continue
+			}
+			anyMatchingClients = true
+			if queryResults, err := resourceEndpointClient.QueryMaps("", filter); err == nil {
+				for _, r := range queryResults.Results {
+					results = append(results, r)
+				}
+				usedHttpEndpoints[resourceEndpointClient.getHttpEndpoint()] = struct{}{}
+			} else {
+				errs = append(errs, err.Error())
+			}
+		}
+	}
+	if !anyMatchingClients {
+		return nil, fmt.Errorf("no available resource endpoints for resource of type '%s'", resourceType)
+	}
+	if len(usedHttpEndpoints) == 0 {
+		return nil, fmt.Errorf(strings.Join(errs, "\n"))
+	}
+	return results, nil
+}
+
+func (resourceManager *ResourceManager) GetMap(resourceType string, resourceId string) (interface{}, error) {
+	if len(resourceManager.services) == 0 {
+		err := resourceManager.Init()
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, s := range resourceManager.services {
+		if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType); matched {
+			return resourceEndpointClient.GetMap(resourceId)
+		}
+	}
+	return resourceManager.getMcmaHttpClient().Get(resourceId, false)
+}
+
 func (resourceManager *ResourceManager) Get(t reflect.Type, resourceId string) (interface{}, error) {
 	if len(resourceManager.services) == 0 {
 		err := resourceManager.Init()
@@ -151,16 +205,17 @@ func (resourceManager *ResourceManager) Get(t reflect.Type, resourceId string) (
 			return nil, err
 		}
 	}
-	for _, s := range resourceManager.services {
-		if resourceEndpointClient, matched := s.GetResourceEndpointClient(t); matched {
-			return resourceEndpointClient.Get(t, resourceId)
+	if t.Kind() != reflect.Map {
+		for _, s := range resourceManager.services {
+			if resourceEndpointClient, matched := s.GetResourceEndpointClientByType(t); matched {
+				return resourceEndpointClient.Get(t, resourceId)
+			}
 		}
 	}
 	return resourceManager.getMcmaHttpClient().Get(resourceId, false)
 }
 
 func (resourceManager *ResourceManager) Create(resource interface{}) (interface{}, error) {
-	t := reflect.TypeOf(resource)
 	if len(resourceManager.services) == 0 {
 		err := resourceManager.Init()
 		if err != nil {
@@ -168,16 +223,38 @@ func (resourceManager *ResourceManager) Create(resource interface{}) (interface{
 		}
 	}
 
-	for _, s := range resourceManager.services {
-		if resourceEndpointClient, matched := s.GetResourceEndpointClient(t); matched {
-			return resourceEndpointClient.Post(t, "", resource)
+	t := reflect.TypeOf(resource)
+	var id string
+	if t.Kind() != reflect.Map {
+		for _, s := range resourceManager.services {
+			if resourceEndpointClient, matched := s.GetResourceEndpointClientByType(t); matched {
+				return resourceEndpointClient.Post(t, "", resource)
+			}
 		}
-	}
 
-	resourceValue := reflect.ValueOf(resource)
-	idField := resourceValue.FieldByName("Id")
-	if idField.IsZero() || idField.Kind() != reflect.String {
-		return nil, fmt.Errorf("no resource endpoint available for type '%s' and no id on resource", t.String())
+		resourceValue := reflect.ValueOf(resource)
+		idField := resourceValue.FieldByName("Id")
+		if idField.IsZero() || idField.Kind() != reflect.String {
+			return nil, fmt.Errorf("no resource endpoint available for type '%s' and no id on resource", t.String())
+		}
+		id = idField.String()
+	} else {
+		resourceMap := resource.(map[string]interface{})
+		resourceType, foundType := resourceMap["@type"]
+		if !foundType {
+			return nil, fmt.Errorf("@type property not found in map")
+		}
+		for _, s := range resourceManager.services {
+			if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType.(string)); matched {
+				return resourceEndpointClient.PostMap("", resourceMap)
+			}
+		}
+
+		idVal, foundId := resourceMap["id"]
+		if foundId {
+			return nil, fmt.Errorf("no resource endpoint available for type '%s' and no id on resource", resourceType)
+		}
+		id = idVal.(string)
 	}
 
 	var jsonBody *bytes.Reader
@@ -186,34 +263,57 @@ func (resourceManager *ResourceManager) Create(resource interface{}) (interface{
 		return nil, err
 	}
 
-	return resourceManager.getMcmaHttpClient().Post(idField.String(), jsonBody)
+	return resourceManager.getMcmaHttpClient().Post(id, jsonBody)
 }
 
 func (resourceManager *ResourceManager) Update(resource interface{}) (interface{}, error) {
-	t := reflect.TypeOf(resource)
 	if len(resourceManager.services) == 0 {
 		err := resourceManager.Init()
 		if err != nil {
 			return nil, err
 		}
 	}
-	resourceType := reflect.TypeOf(resource).String()
-	for _, s := range resourceManager.services {
-		if resourceEndpointClient, matched := s.GetResourceEndpointClient(t); matched {
-			return resourceEndpointClient.Put(t, "", resource)
+
+	t := reflect.TypeOf(resource)
+	var id string
+	if t.Kind() != reflect.Map {
+		for _, s := range resourceManager.services {
+			if resourceEndpointClient, matched := s.GetResourceEndpointClientByType(t); matched {
+				return resourceEndpointClient.Put(t, "", resource)
+			}
 		}
+		resourceValue := reflect.ValueOf(resource)
+		idField := resourceValue.FieldByName("Id")
+		if idField.IsZero() || idField.Kind() != reflect.String {
+			return nil, fmt.Errorf("no resource endpoint available for type '%s' and no id on resource", t.String())
+		}
+		id = idField.String()
+	} else {
+		resourceMap := resource.(map[string]interface{})
+		resourceType, foundType := resourceMap["@type"]
+		if !foundType {
+			return nil, fmt.Errorf("@type property not found in map")
+		}
+		for _, s := range resourceManager.services {
+			if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType.(string)); matched {
+				return resourceEndpointClient.PutMap("", resourceMap)
+			}
+		}
+
+		idVal, foundId := resourceMap["id"]
+		if foundId {
+			return nil, fmt.Errorf("no resource endpoint available for type '%s' and no id on resource", resourceType)
+		}
+		id = idVal.(string)
 	}
-	resourceValue := reflect.ValueOf(resource)
-	idField := resourceValue.FieldByName("Id")
-	if idField.IsZero() || idField.Kind() != reflect.String {
-		return nil, fmt.Errorf("no resource endpoint available for type '%s' and no id on resource", resourceType)
-	}
+
 	var jsonBody *bytes.Reader
 	var err error
 	if jsonBody, err = getJsonReqBody(resource); err != nil {
 		return nil, err
 	}
-	return resourceManager.getMcmaHttpClient().Put(idField.String(), jsonBody)
+
+	return resourceManager.getMcmaHttpClient().Put(id, jsonBody)
 }
 
 func (resourceManager *ResourceManager) Delete(t reflect.Type, resourceId string) error {
@@ -224,7 +324,7 @@ func (resourceManager *ResourceManager) Delete(t reflect.Type, resourceId string
 		}
 	}
 	for _, s := range resourceManager.services {
-		if resourceEndpointClient, matched := s.GetResourceEndpointClient(t); matched {
+		if resourceEndpointClient, matched := s.GetResourceEndpointClientByType(t); matched {
 			err := resourceEndpointClient.Delete(resourceId)
 			return err
 		}

@@ -35,9 +35,13 @@ func (serviceClient *ServiceClient) loadResources() {
 	}
 }
 
-func (serviceClient *ServiceClient) GetResourceEndpointClient(t reflect.Type) (*ResourceEndpointClient, bool) {
+func (serviceClient *ServiceClient) GetResourceEndpointClientByType(t reflect.Type) (*ResourceEndpointClient, bool) {
 	resourceTypeParts := strings.Split(t.String(), ".")
 	resourceType := resourceTypeParts[len(resourceTypeParts)-1]
+	return serviceClient.GetResourceEndpointClientByTypeName(resourceType)
+}
+
+func (serviceClient *ServiceClient) GetResourceEndpointClientByTypeName(resourceType string) (*ResourceEndpointClient, bool) {
 	serviceClient.loadResources()
 	resourceEndpoint, found := serviceClient.resourcesByType[resourceType]
 	return resourceEndpoint, found
