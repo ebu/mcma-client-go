@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 )
@@ -27,16 +28,12 @@ func readJsonRespBody(resp *http.Response, t reflect.Type) (interface{}, error) 
 	if resp.ContentLength == 0 {
 		return r.Elem().Interface(), nil
 	}
-	var body bytes.Buffer
-	var totalBytesRead int64
-	for totalBytesRead < resp.ContentLength {
-		bytesRead, err := body.ReadFrom(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		totalBytesRead += bytesRead
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read resp body: %v", err)
 	}
-	err := json.Unmarshal(body.Bytes(), r.Interface())
+	err = json.Unmarshal(body, r.Interface())
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal json resp body: %v", err)
 	}
