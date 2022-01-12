@@ -168,7 +168,7 @@ func (resourceEndpointClient *ResourceEndpointClient) Get(t reflect.Type, url st
 	})
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) GetMap(url string) (map[string]interface{}, error) {
+func (resourceEndpointClient *ResourceEndpointClient) GetResource(url string) (map[string]interface{}, error) {
 	var m map[string]interface{}
 	mi, err := resourceEndpointClient.Get(reflect.TypeOf(m), url)
 	if err != nil {
@@ -183,7 +183,7 @@ func (resourceEndpointClient *ResourceEndpointClient) Post(t reflect.Type, url s
 	})
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) PostMap(url string, body map[string]interface{}) (interface{}, error) {
+func (resourceEndpointClient *ResourceEndpointClient) PostResource(url string, body map[string]interface{}) (interface{}, error) {
 	return resourceEndpointClient.Post(reflect.TypeOf(body), url, body)
 }
 
@@ -193,7 +193,7 @@ func (resourceEndpointClient *ResourceEndpointClient) Put(t reflect.Type, url st
 	})
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) PutMap(url string, body map[string]interface{}) (interface{}, error) {
+func (resourceEndpointClient *ResourceEndpointClient) PutResource(url string, body map[string]interface{}) (interface{}, error) {
 	return resourceEndpointClient.Put(reflect.TypeOf(body), url, body)
 }
 

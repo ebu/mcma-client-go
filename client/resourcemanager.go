@@ -183,7 +183,7 @@ func (resourceManager *ResourceManager) QueryMaps(resourceType string, filter []
 	return results, nil
 }
 
-func (resourceManager *ResourceManager) GetMap(resourceType string, resourceId string) (map[string]interface{}, error) {
+func (resourceManager *ResourceManager) GetResource(resourceType string, resourceId string) (map[string]interface{}, error) {
 	if len(resourceManager.services) == 0 {
 		err := resourceManager.Init()
 		if err != nil {
@@ -192,7 +192,7 @@ func (resourceManager *ResourceManager) GetMap(resourceType string, resourceId s
 	}
 	for _, s := range resourceManager.services {
 		if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType); matched {
-			return resourceEndpointClient.GetMap(resourceId)
+			return resourceEndpointClient.GetResource(resourceId)
 		}
 	}
 	resp, err := resourceManager.getMcmaHttpClient().Get(resourceId, false)
@@ -267,7 +267,7 @@ func (resourceManager *ResourceManager) Create(resource interface{}) (interface{
 		}
 		for _, s := range resourceManager.services {
 			if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType.(string)); matched {
-				return resourceEndpointClient.PostMap("", resourceMap)
+				return resourceEndpointClient.PostResource("", resourceMap)
 			}
 		}
 
@@ -328,7 +328,7 @@ func (resourceManager *ResourceManager) Update(resource interface{}) (interface{
 		}
 		for _, s := range resourceManager.services {
 			if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType.(string)); matched {
-				return resourceEndpointClient.PutMap("", resourceMap)
+				return resourceEndpointClient.PutResource("", resourceMap)
 			}
 		}
 
@@ -356,6 +356,23 @@ func (resourceManager *ResourceManager) Update(resource interface{}) (interface{
 	}
 
 	return createdResource, nil
+}
+
+func (resourceManager *ResourceManager) DeleteResource(resourceType string, resourceId string) error {
+	if len(resourceManager.services) == 0 {
+		err := resourceManager.Init()
+		if err != nil {
+			return err
+		}
+	}
+	for _, s := range resourceManager.services {
+		if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType); matched {
+			err := resourceEndpointClient.Delete(resourceId)
+			return err
+		}
+	}
+	_, err := resourceManager.getMcmaHttpClient().Delete(resourceId)
+	return err
 }
 
 func (resourceManager *ResourceManager) Delete(t reflect.Type, resourceId string) error {
