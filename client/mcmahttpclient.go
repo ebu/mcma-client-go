@@ -79,9 +79,11 @@ func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Re
 
 		if client.authenticator != nil {
 			authenticator := *client.authenticator
-			err := authenticator.Authenticate(req)
-			if err != nil {
-				return nil, err
+			if authenticator != nil {
+				err := authenticator.Authenticate(req)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
