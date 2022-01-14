@@ -174,6 +174,9 @@ func (resourceEndpointClient *ResourceEndpointClient) GetResource(url string) (m
 	if err != nil {
 		return nil, err
 	}
+	if mi == nil {
+		return nil, nil
+	}
 	return mi.(map[string]interface{}), nil
 }
 

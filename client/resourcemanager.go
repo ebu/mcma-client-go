@@ -144,7 +144,7 @@ func (resourceManager *ResourceManager) Query(t reflect.Type, filter []struct {
 	return results, nil
 }
 
-func (resourceManager *ResourceManager) QueryMaps(resourceType string, filter []struct {
+func (resourceManager *ResourceManager) QueryResources(resourceType string, filter []struct {
 	key   string
 	value string
 }) ([]interface{}, error) {
@@ -192,7 +192,9 @@ func (resourceManager *ResourceManager) GetResource(resourceType string, resourc
 	}
 	for _, s := range resourceManager.services {
 		if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType); matched {
-			return resourceEndpointClient.GetResource(resourceId)
+			if r, err := resourceEndpointClient.GetResource(resourceId); r != nil {
+				return r, err
+			}
 		}
 	}
 	resp, err := resourceManager.getMcmaHttpClient().Get(resourceId, false)
