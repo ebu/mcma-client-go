@@ -94,7 +94,7 @@ func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Re
 			if resp.StatusCode < 200 || (resp.StatusCode >= 300 && (resp.StatusCode != 404 || throwOn404)) {
 				var errorBody bytes.Buffer
 				if resp.Body != nil {
-					errorBody.ReadFrom(resp.Body)
+					_, _ = errorBody.ReadFrom(resp.Body)
 				}
 				return nil, fmt.Errorf("received resp %v doing %v to %v: %v", resp.Status, req.Method, req.URL, errorBody.String())
 			} else {

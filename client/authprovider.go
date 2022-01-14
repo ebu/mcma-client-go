@@ -30,7 +30,7 @@ func (authProvider *AuthProvider) Get(authType string, authContext interface{}) 
 	default:
 		authContextJson, err := json.Marshal(v)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to marshal auth context to json: %v")
+			return nil, fmt.Errorf("failed to marshal auth context to json: %v", v)
 		}
 		authContextStr = string(authContextJson)
 	}

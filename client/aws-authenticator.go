@@ -33,7 +33,10 @@ func (aws4Auth AWS4Authenticator) Authenticate(req *http.Request) error {
 		}
 	}
 	if body != nil {
-		body.Seek(0, io.SeekStart)
+		_, err := body.Seek(0, io.SeekStart)
+		if err != nil {
+			return fmt.Errorf("failed to seek to start of request body for AWS auth: %v", err)
+		}
 	}
 	header, err := aws4Auth.signer.Sign(req, body, aws4Auth.service, aws4Auth.region, time.Now())
 	for key, values := range header {
@@ -42,7 +45,10 @@ func (aws4Auth AWS4Authenticator) Authenticate(req *http.Request) error {
 		}
 	}
 	if body != nil {
-		body.Seek(0, io.SeekStart)
+		_, err := body.Seek(0, io.SeekStart)
+		if err != nil {
+			return fmt.Errorf("failed to seek to start of request body for AWS auth: %v", err)
+		}
 	}
 	return err
 }
@@ -75,7 +81,7 @@ func (resourceManager *ResourceManager) AddAWS4Auth() {
 			s := authContext.(string)
 			if len(s) > 0 {
 				if err := json.Unmarshal([]byte(s), &aws4AuthContext); err != nil {
-					return nil, fmt.Errorf("Failed to unmarshal json to AWS4 auth context: %v", err)
+					return nil, fmt.Errorf("failed to unmarshal json to AWS4 auth context: %v", err)
 				}
 			}
 		case AWS4AuthContext:
