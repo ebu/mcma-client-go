@@ -192,9 +192,7 @@ func (resourceManager *ResourceManager) GetResource(resourceType string, resourc
 	}
 	for _, s := range resourceManager.services {
 		if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeName(resourceType); matched {
-			if r, err := resourceEndpointClient.GetResource(resourceId); r != nil {
-				return r, err
-			}
+			return resourceEndpointClient.GetResource(resourceId)
 		}
 	}
 	resp, err := resourceManager.getMcmaHttpClient().Get(resourceId, false)

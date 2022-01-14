@@ -77,8 +77,8 @@ func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Re
 			req.Header.Set("mcma-tracker", trackerBase64)
 		}
 
-		authenticator := *client.authenticator
-		if authenticator != nil {
+		if client.authenticator != nil {
+			authenticator := *client.authenticator
 			err := authenticator.Authenticate(req)
 			if err != nil {
 				return nil, err
