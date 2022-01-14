@@ -24,8 +24,12 @@ func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*Mcma
 		return resourceEndpointClient.mcmaHttpClient, nil
 	}
 
-	authType := resourceEndpointClient.resourceEndpoint.AuthType
-	if authType == "" {
+	var authType string
+	endpointAuthType := resourceEndpointClient.resourceEndpoint.AuthType
+	if endpointAuthType != nil {
+		authType = *endpointAuthType
+	}
+	if len(authType) == 0 {
 		authType = resourceEndpointClient.serviceAuthType
 	}
 
