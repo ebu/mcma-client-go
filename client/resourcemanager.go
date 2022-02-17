@@ -426,26 +426,7 @@ func (resourceManager *ResourceManager) AddAuth(authType string, authenticator A
 	resourceManager.authProvider.Add(authType, authenticator)
 }
 
-func NewResourceManager(servicesUrl, servicesAuthType string) ResourceManager {
-	return ResourceManager{
-		authProvider:     newAuthProvider(),
-		httpClient:       &http.Client{},
-		servicesUrl:      servicesUrl,
-		servicesAuthType: servicesAuthType,
-	}
-}
-
-func NewResourceManagerWithTracker(servicesUrl, servicesAuthType string, tracker model.McmaTracker) ResourceManager {
-	return ResourceManager{
-		authProvider:     newAuthProvider(),
-		httpClient:       &http.Client{},
-		servicesUrl:      servicesUrl,
-		servicesAuthType: servicesAuthType,
-		tracker:          tracker,
-	}
-}
-
-func NewResourceManagerNoAuth(servicesUrl string) ResourceManager {
+func NewResourceManager(servicesUrl string) ResourceManager {
 	return ResourceManager{
 		authProvider: newAuthProvider(),
 		httpClient:   &http.Client{},
@@ -453,7 +434,7 @@ func NewResourceManagerNoAuth(servicesUrl string) ResourceManager {
 	}
 }
 
-func NewResourceManagerNoAuthWithTracker(servicesUrl string, tracker model.McmaTracker) ResourceManager {
+func NewResourceManagerWithTracker(servicesUrl string, tracker model.McmaTracker) ResourceManager {
 	return ResourceManager{
 		authProvider: newAuthProvider(),
 		httpClient:   &http.Client{},
