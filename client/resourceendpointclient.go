@@ -10,13 +10,12 @@ import (
 )
 
 type ResourceEndpointClient struct {
-	authProvider       *AuthProvider
-	httpClient         *http.Client
-	resourceEndpoint   model.ResourceEndpoint
-	serviceAuthType    string
-	serviceAuthContext interface{}
-	tracker            model.McmaTracker
-	mcmaHttpClient     *McmaHttpClient
+	authProvider     *AuthProvider
+	httpClient       *http.Client
+	resourceEndpoint model.ResourceEndpoint
+	serviceAuthType  string
+	tracker          model.McmaTracker
+	mcmaHttpClient   *McmaHttpClient
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*McmaHttpClient, error) {
@@ -33,15 +32,10 @@ func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*Mcma
 		authType = resourceEndpointClient.serviceAuthType
 	}
 
-	authContext := resourceEndpointClient.resourceEndpoint.AuthContext
-	if authContext == nil {
-		authContext = resourceEndpointClient.serviceAuthContext
-	}
-
 	var authenticator Authenticator
 	var err error
 	if resourceEndpointClient.authProvider != nil && authType != "" {
-		authenticator, err = resourceEndpointClient.authProvider.Get(authType, authContext)
+		authenticator, err = resourceEndpointClient.authProvider.Get(authType)
 		if err != nil {
 			return nil, err
 		}

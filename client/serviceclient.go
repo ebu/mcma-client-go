@@ -23,12 +23,11 @@ func (serviceClient *ServiceClient) loadResources() {
 	serviceClient.resourcesByType = make(map[string]*ResourceEndpointClient)
 	for _, r := range serviceClient.service.Resources {
 		resourceEndpointClient := &ResourceEndpointClient{
-			authProvider:       serviceClient.authProvider,
-			httpClient:         serviceClient.httpClient,
-			resourceEndpoint:   r,
-			serviceAuthType:    serviceClient.service.AuthType,
-			serviceAuthContext: serviceClient.service.AuthContext,
-			tracker:            serviceClient.tracker,
+			authProvider:     serviceClient.authProvider,
+			httpClient:       serviceClient.httpClient,
+			resourceEndpoint: r,
+			serviceAuthType:  serviceClient.service.AuthType,
+			tracker:          serviceClient.tracker,
 		}
 		serviceClient.resources = append(serviceClient.resources, resourceEndpointClient)
 		serviceClient.resourcesByType[r.ResourceType] = resourceEndpointClient

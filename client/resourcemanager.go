@@ -15,7 +15,6 @@ type ResourceManager struct {
 	mcmaHttpClient        *McmaHttpClient
 	servicesUrl           string
 	servicesAuthType      string
-	servicesAuthContext   string
 	tracker               model.McmaTracker
 	services              []*ServiceClient
 	serviceRegistryClient *ServiceClient
@@ -23,9 +22,8 @@ type ResourceManager struct {
 
 func (resourceManager *ResourceManager) getServiceRegistryData() model.Service {
 	return model.Service{
-		Name:        "Service Registry",
-		AuthType:    resourceManager.servicesAuthType,
-		AuthContext: resourceManager.servicesAuthContext,
+		Name:     "Service Registry",
+		AuthType: resourceManager.servicesAuthType,
 		Resources: []model.ResourceEndpoint{
 			{
 				ResourceType: "Service",
@@ -424,28 +422,26 @@ func (resourceManager *ResourceManager) SetHttpClient(httpClient *http.Client) {
 	resourceManager.services = resourceManager.services[:0]
 }
 
-func (resourceManager *ResourceManager) AddAuth(authType string, factory AuthenticatorFactory) {
-	resourceManager.authProvider.Add(authType, factory)
+func (resourceManager *ResourceManager) AddAuth(authType string, authenticator Authenticator) {
+	resourceManager.authProvider.Add(authType, authenticator)
 }
 
-func NewResourceManager(servicesUrl string, servicesAuthType string, servicesAuthContext string) ResourceManager {
+func NewResourceManager(servicesUrl, servicesAuthType string) ResourceManager {
 	return ResourceManager{
-		authProvider:        newAuthProvider(),
-		httpClient:          &http.Client{},
-		servicesUrl:         servicesUrl,
-		servicesAuthType:    servicesAuthType,
-		servicesAuthContext: servicesAuthContext,
+		authProvider:     newAuthProvider(),
+		httpClient:       &http.Client{},
+		servicesUrl:      servicesUrl,
+		servicesAuthType: servicesAuthType,
 	}
 }
 
-func NewResourceManagerWithTracker(servicesUrl string, servicesAuthType string, servicesAuthContext string, tracker model.McmaTracker) ResourceManager {
+func NewResourceManagerWithTracker(servicesUrl, servicesAuthType string, tracker model.McmaTracker) ResourceManager {
 	return ResourceManager{
-		authProvider:        newAuthProvider(),
-		httpClient:          &http.Client{},
-		servicesUrl:         servicesUrl,
-		servicesAuthType:    servicesAuthType,
-		servicesAuthContext: servicesAuthContext,
-		tracker:             tracker,
+		authProvider:     newAuthProvider(),
+		httpClient:       &http.Client{},
+		servicesUrl:      servicesUrl,
+		servicesAuthType: servicesAuthType,
+		tracker:          tracker,
 	}
 }
 
