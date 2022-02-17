@@ -9,7 +9,6 @@ type Service struct {
 	DateModified    time.Time          `json:"dateModified"`
 	Name            string             `json:"name"`
 	AuthType        string             `json:"authType"`
-	AuthContext     string             `json:"authContext"`
 	Resources       []ResourceEndpoint `json:"resources"`
 	JobType         string             `json:"jobType"`
 	JobProfileIds   []string           `json:"jobProfileIds"`
@@ -17,13 +16,12 @@ type Service struct {
 	OutputLocations []Locator          `json:"outputLocations"`
 }
 
-func NewService(name string, authType string, authContext string, resources []ResourceEndpoint) Service {
+func NewService(name, authType string, resources []ResourceEndpoint) Service {
 	return Service{
-		Type:        "Service",
-		Name:        name,
-		AuthType:    authType,
-		AuthContext: authContext,
-		Resources:   resources,
+		Type:      "Service",
+		Name:      name,
+		AuthType:  authType,
+		Resources: resources,
 	}
 }
 
@@ -35,12 +33,11 @@ func NewServiceNoAuth(name string, resources []ResourceEndpoint) Service {
 	}
 }
 
-func NewServiceForJobType(name string, authType string, authContext string, resources []ResourceEndpoint, jobType string, jobProfileIds []string) Service {
+func NewServiceForJobType(name, authType string, resources []ResourceEndpoint, jobType string, jobProfileIds []string) Service {
 	return Service{
 		Type:          "Service",
 		Name:          name,
 		AuthType:      authType,
-		AuthContext:   authContext,
 		Resources:     resources,
 		JobType:       jobType,
 		JobProfileIds: jobProfileIds,
@@ -57,12 +54,11 @@ func NewServiceForJobTypeNoAuth(name string, resources []ResourceEndpoint, jobTy
 	}
 }
 
-func NewServiceForJobTypeWithLocations(name string, authType string, authContext string, resources []ResourceEndpoint, jobType string, jobProfileIds []string, inputLocations []Locator, outputLocations []Locator) Service {
+func NewServiceForJobTypeWithLocations(name, authType string, resources []ResourceEndpoint, jobType string, jobProfileIds []string, inputLocations []Locator, outputLocations []Locator) Service {
 	return Service{
 		Type:            "Service",
 		Name:            name,
 		AuthType:        authType,
-		AuthContext:     authContext,
 		Resources:       resources,
 		JobType:         jobType,
 		JobProfileIds:   jobProfileIds,
