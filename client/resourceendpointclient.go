@@ -50,18 +50,24 @@ func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*Mcma
 	return resourceEndpointClient.mcmaHttpClient, nil
 }
 
-func (resourceEndpointClient ResourceEndpointClient) getFullUrl(url string) string {
+func (resourceEndpointClient ResourceEndpointClient) getFullUrl(url string) (string, error) {
 	if url == "" {
-		return resourceEndpointClient.resourceEndpoint.HttpEndpoint
+		return resourceEndpointClient.resourceEndpoint.HttpEndpoint, nil
 	}
-	if strings.HasPrefix(strings.ToLower(url), strings.ToLower(resourceEndpointClient.resourceEndpoint.HttpEndpoint)) {
-		return url
+	if strings.HasPrefix(strings.ToLower(url), "http") {
+		if resourceEndpointClient.hasMatchingHttpEndpoint(url) {
+			return url, nil
+		} else {
+			return "", fmt.Errorf("cannot resolve absolute url %s as it does not match resource endpoint %s", url, resourceEndpointClient.resourceEndpoint.HttpEndpoint)
+		}
 	}
-	return strings.TrimSuffix(resourceEndpointClient.resourceEndpoint.HttpEndpoint, "/") + "/" + url
+	return strings.TrimSuffix(resourceEndpointClient.resourceEndpoint.HttpEndpoint, "/") + "/" + url, nil
 }
 
 func (resourceEndpointClient ResourceEndpointClient) hasMatchingHttpEndpoint(url string) bool {
-	return strings.HasPrefix(strings.ToLower(url), strings.ToLower(resourceEndpointClient.resourceEndpoint.HttpEndpoint))
+	urlLowerNoProto := strings.TrimPrefix(strings.TrimPrefix(strings.ToLower(url), "https"), "http")
+	httpEndpointLowerNoProto := strings.TrimPrefix(strings.TrimPrefix(strings.ToLower(resourceEndpointClient.getHttpEndpoint()), "https"), "http")
+	return strings.HasPrefix(urlLowerNoProto, httpEndpointLowerNoProto)
 }
 
 func (resourceEndpointClient ResourceEndpointClient) getHttpEndpoint() string {
@@ -74,7 +80,9 @@ func (resourceEndpointClient *ResourceEndpointClient) execute(t reflect.Type, ur
 		return nil, err
 	}
 
-	url = resourceEndpointClient.getFullUrl(url)
+	if url, err = resourceEndpointClient.getFullUrl(url); err != nil {
+		return nil, err
+	}
 	reqBody, err := getJsonReqBody(body)
 	if err != nil {
 		return nil, err
@@ -99,7 +107,9 @@ func (resourceEndpointClient *ResourceEndpointClient) Query(t reflect.Type, url 
 		return queryResults, err
 	}
 
-	url = resourceEndpointClient.getFullUrl(url)
+	if url, err = resourceEndpointClient.getFullUrl(url); err != nil {
+		return queryResults, err
+	}
 	if len(queryParameters) > 0 {
 		url += "?"
 		for _, p := range queryParameters {
@@ -139,7 +149,9 @@ func (resourceEndpointClient *ResourceEndpointClient) QueryMaps(url string, quer
 		return queryResults, err
 	}
 
-	url = resourceEndpointClient.getFullUrl(url)
+	if url, err = resourceEndpointClient.getFullUrl(url); err != nil {
+		return queryResults, err
+	}
 	if len(queryParameters) > 0 {
 		url += "?"
 		for _, p := range queryParameters {

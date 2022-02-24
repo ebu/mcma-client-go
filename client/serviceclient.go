@@ -45,3 +45,25 @@ func (serviceClient *ServiceClient) GetResourceEndpointClientByTypeName(resource
 	resourceEndpoint, found := serviceClient.resourcesByType[resourceType]
 	return resourceEndpoint, found
 }
+
+func (serviceClient *ServiceClient) GetResourceEndpointClientByTypeAndUrl(t reflect.Type, url string) (*ResourceEndpointClient, bool) {
+	resourceEndpoint, found := serviceClient.GetResourceEndpointClientByType(t)
+	if !found {
+		return nil, false
+	}
+	if resourceEndpoint.hasMatchingHttpEndpoint(url) {
+		return nil, false
+	}
+	return resourceEndpoint, true
+}
+
+func (serviceClient *ServiceClient) GetResourceEndpointClientByTypeNameAndUrl(resourceType string, url string) (*ResourceEndpointClient, bool) {
+	resourceEndpoint, found := serviceClient.GetResourceEndpointClientByTypeName(resourceType)
+	if !found {
+		return nil, false
+	}
+	if resourceEndpoint.hasMatchingHttpEndpoint(url) {
+		return nil, false
+	}
+	return resourceEndpoint, true
+}
