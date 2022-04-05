@@ -359,6 +359,9 @@ func (resourceManager *ResourceManager) DeleteResource(resourceType string, reso
 }
 
 func (resourceManager *ResourceManager) Delete(t reflect.Type, resourceId string) error {
+	if err := resourceManager.EnsureInit(); err != nil {
+		return err
+	}
 	for _, s := range resourceManager.services {
 		if resourceEndpointClient, matched := s.GetResourceEndpointClientByTypeAndUrl(t, resourceId); matched {
 			err := resourceEndpointClient.Delete(resourceId)

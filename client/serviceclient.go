@@ -51,7 +51,7 @@ func (serviceClient *ServiceClient) GetResourceEndpointClientByTypeAndUrl(t refl
 	if !found {
 		return nil, false
 	}
-	if resourceEndpoint.hasMatchingHttpEndpoint(url) {
+	if !resourceEndpoint.hasMatchingHttpEndpoint(url) {
 		return nil, false
 	}
 	return resourceEndpoint, true
@@ -62,7 +62,7 @@ func (serviceClient *ServiceClient) GetResourceEndpointClientByTypeNameAndUrl(re
 	if !found {
 		return nil, false
 	}
-	if resourceEndpoint.hasMatchingHttpEndpoint(url) {
+	if !resourceEndpoint.hasMatchingHttpEndpoint(url) {
 		return nil, false
 	}
 	return resourceEndpoint, true
