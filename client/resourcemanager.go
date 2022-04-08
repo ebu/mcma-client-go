@@ -3,10 +3,12 @@ package mcmaclient
 import (
 	"bytes"
 	"fmt"
-	"github.com/ebu/mcma-libraries-go/model"
 	"net/http"
 	"reflect"
 	"strings"
+	"sync"
+
+	"github.com/ebu/mcma-libraries-go/model"
 )
 
 type ResourceManager struct {
@@ -18,6 +20,7 @@ type ResourceManager struct {
 	tracker               model.McmaTracker
 	services              []*ServiceClient
 	serviceRegistryClient *ServiceClient
+	initMutex             sync.Mutex
 }
 
 func (resourceManager *ResourceManager) getServiceRegistryData() model.Service {
@@ -101,6 +104,8 @@ func (resourceManager *ResourceManager) Init() error {
 }
 
 func (resourceManager *ResourceManager) EnsureInit() error {
+	resourceManager.initMutex.Lock()
+	defer resourceManager.initMutex.Unlock()
 	if len(resourceManager.services) == 0 {
 		err := resourceManager.Init()
 		if err != nil {
