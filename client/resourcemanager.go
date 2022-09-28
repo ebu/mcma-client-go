@@ -200,6 +200,9 @@ func (resourceManager *ResourceManager) GetResource(resourceType string, resourc
 	if err != nil {
 		return nil, err
 	}
+	if resp.StatusCode == 404 {
+		return nil, nil
+	}
 
 	var m map[string]interface{}
 	resource, err := readJsonRespBody(resp, reflect.TypeOf(m))
@@ -224,6 +227,9 @@ func (resourceManager *ResourceManager) Get(t reflect.Type, resourceId string) (
 	resp, err := resourceManager.getMcmaHttpClient().Get(resourceId, false)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode == 404 {
+		return nil, nil
 	}
 
 	resource, err := readJsonRespBody(resp, t)
