@@ -23,11 +23,7 @@ func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*Mcma
 		return resourceEndpointClient.mcmaHttpClient, nil
 	}
 
-	var authType string
-	endpointAuthType := resourceEndpointClient.resourceEndpoint.AuthType
-	if endpointAuthType != nil {
-		authType = *endpointAuthType
-	}
+	authType := resourceEndpointClient.resourceEndpoint.AuthType
 	if len(authType) == 0 {
 		authType = resourceEndpointClient.serviceAuthType
 	}
@@ -50,7 +46,7 @@ func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*Mcma
 	return resourceEndpointClient.mcmaHttpClient, nil
 }
 
-func (resourceEndpointClient ResourceEndpointClient) getFullUrl(url string) (string, error) {
+func (resourceEndpointClient *ResourceEndpointClient) getFullUrl(url string) (string, error) {
 	if url == "" {
 		return resourceEndpointClient.resourceEndpoint.HttpEndpoint, nil
 	}
@@ -64,13 +60,13 @@ func (resourceEndpointClient ResourceEndpointClient) getFullUrl(url string) (str
 	return strings.TrimSuffix(resourceEndpointClient.resourceEndpoint.HttpEndpoint, "/") + "/" + url, nil
 }
 
-func (resourceEndpointClient ResourceEndpointClient) hasMatchingHttpEndpoint(url string) bool {
+func (resourceEndpointClient *ResourceEndpointClient) hasMatchingHttpEndpoint(url string) bool {
 	urlLowerNoProto := strings.TrimPrefix(strings.TrimPrefix(strings.ToLower(url), "https"), "http")
 	httpEndpointLowerNoProto := strings.TrimPrefix(strings.TrimPrefix(strings.ToLower(resourceEndpointClient.getHttpEndpoint()), "https"), "http")
 	return strings.HasPrefix(urlLowerNoProto, httpEndpointLowerNoProto)
 }
 
-func (resourceEndpointClient ResourceEndpointClient) getHttpEndpoint() string {
+func (resourceEndpointClient *ResourceEndpointClient) getHttpEndpoint() string {
 	return resourceEndpointClient.resourceEndpoint.HttpEndpoint
 }
 
