@@ -38,7 +38,7 @@ func NewJobProfile(name string) JobProfile {
 	}
 }
 
-func (jp *JobProfile) MarshalJSON() ([]byte, error) {
+func (jp JobProfile) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&jobProfileJson{
 		Type:                    JobProfileType,
 		Id:                      stringPtrOrNull(jp.Id),
@@ -52,7 +52,7 @@ func (jp *JobProfile) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (jp *JobProfile) UnmarshalJSON(data []byte) error {
+func (jp JobProfile) UnmarshalJSON(data []byte) error {
 	var tmp jobProfileJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

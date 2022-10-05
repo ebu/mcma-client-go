@@ -15,7 +15,7 @@ type queryResultsJson struct {
 	NextPageStartToken *string       `json:"nextPageStartToken"`
 }
 
-func (qr *QueryResults) GetResults(t reflect.Type) ([]interface{}, error) {
+func (qr QueryResults) GetResults(t reflect.Type) ([]interface{}, error) {
 	var results []interface{}
 	for _, r := range qr.Results {
 		resultVal := reflect.New(t)
@@ -34,14 +34,14 @@ func (qr *QueryResults) GetResults(t reflect.Type) ([]interface{}, error) {
 	return results, nil
 }
 
-func (qr *QueryResults) MarshalJSON() ([]byte, error) {
+func (qr QueryResults) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&queryResultsJson{
 		Results:            qr.Results,
 		NextPageStartToken: stringPtrOrNull(qr.NextPageStartToken),
 	})
 }
 
-func (qr *QueryResults) UnmarshalJSON(data []byte) error {
+func (qr QueryResults) UnmarshalJSON(data []byte) error {
 	var tmp queryResultsJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

@@ -35,7 +35,7 @@ func NewResourceEndpointWithAuth(resourceType, httpEndpoint, authType string) Re
 	}
 }
 
-func (n *ResourceEndpoint) MarshalJSON() ([]byte, error) {
+func (n ResourceEndpoint) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&resourceEndpointJson{
 		Type:         &ResourceEndpointType,
 		ResourceType: stringPtrOrNull(n.ResourceType),
@@ -44,7 +44,7 @@ func (n *ResourceEndpoint) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (n *ResourceEndpoint) UnmarshalJSON(data []byte) error {
+func (n ResourceEndpoint) UnmarshalJSON(data []byte) error {
 	var tmp resourceEndpointJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

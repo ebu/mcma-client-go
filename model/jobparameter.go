@@ -19,14 +19,14 @@ func NewJobParameter(parameterName, parameterType string) JobParameter {
 	}
 }
 
-func (jp *JobParameter) MarshalJSON() ([]byte, error) {
+func (jp JobParameter) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&jobParameterJson{
 		ParameterName: stringPtrOrNull(jp.ParameterName),
 		ParameterType: stringPtrOrNull(jp.ParameterType),
 	})
 }
 
-func (jp *JobParameter) UnmarshalJSON(data []byte) error {
+func (jp JobParameter) UnmarshalJSON(data []byte) error {
 	var tmp jobParameterJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

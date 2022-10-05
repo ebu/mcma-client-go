@@ -24,7 +24,7 @@ func NewNotificationEndpoint(id, httpEndpoint string) NotificationEndpoint {
 	}
 }
 
-func (ne *NotificationEndpoint) MarshalJSON() ([]byte, error) {
+func (ne NotificationEndpoint) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&notificationEndpointJson{
 		Type:         &NotificationEndpointType,
 		Id:           stringPtrOrNull(ne.Id),
@@ -32,7 +32,7 @@ func (ne *NotificationEndpoint) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (ne *NotificationEndpoint) UnmarshalJSON(data []byte) error {
+func (ne NotificationEndpoint) UnmarshalJSON(data []byte) error {
 	var tmp notificationEndpointJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

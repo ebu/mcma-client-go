@@ -24,7 +24,7 @@ func NewNotification(source string, content interface{}) Notification {
 	}
 }
 
-func (n *Notification) MarshalJSON() ([]byte, error) {
+func (n Notification) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&notificationJson{
 		Type:    &NotificationType,
 		Source:  stringPtrOrNull(n.Source),
@@ -32,7 +32,7 @@ func (n *Notification) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (n *Notification) UnmarshalJSON(data []byte) error {
+func (n Notification) UnmarshalJSON(data []byte) error {
 	var tmp notificationJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

@@ -1,13 +1,16 @@
 package model
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+)
 
 func TestServiceMarshalJSON(t *testing.T) {
 	s := NewService("test", "", make([]ResourceEndpoint, 0))
-	data, err := s.MarshalJSON()
+	data, err := json.Marshal(s)
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-	json := string(data)
-	t.Log(json)
+	j := string(data)
+	t.Log(j)
 }

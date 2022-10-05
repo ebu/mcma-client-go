@@ -27,7 +27,7 @@ func NewTracker(id, label string, custom map[string]string) McmaTracker {
 	}
 }
 
-func (t *McmaTracker) MarshalJSON() ([]byte, error) {
+func (t McmaTracker) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&mcmaTrackerJson{
 		Type:   &McmaTrackerType,
 		Id:     stringPtrOrNull(t.Id),
@@ -36,7 +36,7 @@ func (t *McmaTracker) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (t *McmaTracker) UnmarshalJSON(data []byte) error {
+func (t McmaTracker) UnmarshalJSON(data []byte) error {
 	var tmp mcmaTrackerJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
