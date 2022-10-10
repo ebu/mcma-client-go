@@ -15,7 +15,7 @@ import (
 type McmaHttpClient struct {
 	httpClient    *http.Client
 	authenticator *Authenticator
-	tracker       model.McmaTracker
+	tracker       *model.McmaTracker
 }
 
 type nopCloser struct {
@@ -74,7 +74,7 @@ func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Re
 		1 * time.Minute,
 	}
 
-	if &client.tracker != nil {
+	if client.tracker != nil {
 		tracker := req.Header.Get("mcma-tracker")
 		if tracker != "" {
 			req.Header.Del("mcma-tracker")
@@ -99,45 +99,32 @@ func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Re
 
 	trySendReq := func() (bool, *http.Response, error) {
 		resp, err := client.httpClient.Do(req)
-
-		if err != nil {
-			return true, resp, err
-		}
-
-		if resp.StatusCode < 400 {
-			return true, resp, nil
-		}
-
-		if resp.StatusCode < 500 && resp.StatusCode != 429 {
-			var errorBody bytes.Buffer
-			if resp.Body != nil {
-				_, _ = errorBody.ReadFrom(resp.Body)
-			}
-			err = fmt.Errorf("%v %v returned %v: %v", req.Method, req.URL, resp.Status, errorBody.String())
-			return true, resp, err
-		}
-
-		err = fmt.Errorf("received resp %v", resp.Status)
-		return false, resp, err
+		done := err == nil && resp.StatusCode < 500 && resp.StatusCode != 429
+		return done, resp, err
 	}
-
 	done, resp, err := trySendReq()
-	if done {
+	if !done {
+		for i := 0; i < len(backOffDurations); i++ {
+			time.Sleep(backOffDurations[i])
+			done, resp, err = trySendReq()
+		}
+	}
+	// connectivity/network or code error
+	if err != nil {
 		return resp, err
 	}
-
-	for i := 0; i < len(backOffDurations); i++ {
-		time.Sleep(backOffDurations[i])
-
-		done, resp, err = trySendReq()
-		if done {
-			return resp, err
-		}
-	}
-
+	// defer 404 handling to caller if specified
 	if resp.StatusCode == 404 && !throwOn404 {
 		return resp, nil
 	}
-
-	return resp, fmt.Errorf("failed to do %v to %v after %v ms: %v", req.Method, req.URL, start.UnixMilli()-time.Now().UnixMilli(), err)
+	// 5xx/429 means we retried until we hit the limit
+	if resp.StatusCode >= 500 || resp.StatusCode == 429 {
+		return resp, fmt.Errorf("failed to do %v to %v after %v ms: %v", req.Method, req.URL, start.UnixMilli()-time.Now().UnixMilli(), err)
+	}
+	// try to read the response and return it as an error
+	var errorBody bytes.Buffer
+	if resp.Body != nil {
+		_, _ = errorBody.ReadFrom(resp.Body)
+	}
+	return resp, fmt.Errorf("%v %v returned %v: %v", req.Method, req.URL, resp.Status, errorBody.String())
 }
