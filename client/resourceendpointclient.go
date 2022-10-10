@@ -14,7 +14,7 @@ type ResourceEndpointClient struct {
 	httpClient       *http.Client
 	resourceEndpoint model.ResourceEndpoint
 	serviceAuthType  string
-	tracker          model.McmaTracker
+	tracker          *model.McmaTracker
 	mcmaHttpClient   *McmaHttpClient
 }
 

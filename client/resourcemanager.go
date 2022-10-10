@@ -17,7 +17,7 @@ type ResourceManager struct {
 	mcmaHttpClient        *McmaHttpClient
 	servicesUrl           string
 	servicesAuthType      string
-	tracker               model.McmaTracker
+	tracker               *model.McmaTracker
 	services              []*ServiceClient
 	serviceRegistryClient *ServiceClient
 	initMutex             sync.Mutex
@@ -436,7 +436,7 @@ func NewResourceManagerNoAuth(servicesUrl string) ResourceManager {
 	}
 }
 
-func NewResourceManagerWithTracker(servicesUrl string, servicesAuthType string, tracker model.McmaTracker) ResourceManager {
+func NewResourceManagerWithTracker(servicesUrl string, servicesAuthType string, tracker *model.McmaTracker) ResourceManager {
 	return ResourceManager{
 		authProvider:     newAuthProvider(),
 		httpClient:       &http.Client{},
@@ -446,7 +446,7 @@ func NewResourceManagerWithTracker(servicesUrl string, servicesAuthType string, 
 	}
 }
 
-func NewResourceManagerWithTrackerNoAuth(servicesUrl string, tracker model.McmaTracker) ResourceManager {
+func NewResourceManagerWithTrackerNoAuth(servicesUrl string, tracker *model.McmaTracker) ResourceManager {
 	return ResourceManager{
 		authProvider: newAuthProvider(),
 		httpClient:   &http.Client{},

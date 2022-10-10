@@ -11,7 +11,7 @@ type ServiceClient struct {
 	authProvider    *AuthProvider
 	httpClient      *http.Client
 	service         model.Service
-	tracker         model.McmaTracker
+	tracker         *model.McmaTracker
 	resources       []*ResourceEndpointClient
 	resourcesByType map[string]*ResourceEndpointClient
 }
