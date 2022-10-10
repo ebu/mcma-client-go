@@ -102,7 +102,7 @@ func (s Service) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (s Service) UnmarshalJSON(data []byte) error {
+func (s *Service) UnmarshalJSON(data []byte) error {
 	var tmp serviceJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

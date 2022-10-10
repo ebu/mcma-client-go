@@ -62,7 +62,7 @@ func (client *McmaHttpClient) Delete(url string) (*http.Response, error) {
 
 func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Response, error) {
 	start := time.Now()
-	backOffTimesInMs := []time.Duration{
+	backOffDurations := []time.Duration{
 		250 * time.Millisecond,
 		500 * time.Millisecond,
 		1 * time.Second,
@@ -108,7 +108,7 @@ func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Re
 			return true, resp, nil
 		}
 
-		if resp.StatusCode < 500 && resp.StatusCode != 404 && resp.StatusCode != 429 {
+		if resp.StatusCode < 500 && resp.StatusCode != 429 {
 			var errorBody bytes.Buffer
 			if resp.Body != nil {
 				_, _ = errorBody.ReadFrom(resp.Body)
@@ -126,8 +126,8 @@ func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Re
 		return resp, err
 	}
 
-	for i := 0; i < len(backOffTimesInMs); i++ {
-		time.Sleep(backOffTimesInMs[i])
+	for i := 0; i < len(backOffDurations); i++ {
+		time.Sleep(backOffDurations[i])
 
 		done, resp, err = trySendReq()
 		if done {

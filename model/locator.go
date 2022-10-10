@@ -28,7 +28,7 @@ func (l Locator) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (l Locator) UnmarshalJSON(data []byte) error {
+func (l *Locator) UnmarshalJSON(data []byte) error {
 	var tmp locatorJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

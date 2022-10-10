@@ -41,7 +41,7 @@ func (qr QueryResults) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (qr QueryResults) UnmarshalJSON(data []byte) error {
+func (qr *QueryResults) UnmarshalJSON(data []byte) error {
 	var tmp queryResultsJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

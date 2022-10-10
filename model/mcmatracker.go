@@ -36,7 +36,7 @@ func (t McmaTracker) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (t McmaTracker) UnmarshalJSON(data []byte) error {
+func (t *McmaTracker) UnmarshalJSON(data []byte) error {
 	var tmp mcmaTrackerJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err

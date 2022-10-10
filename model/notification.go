@@ -32,7 +32,7 @@ func (n Notification) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (n Notification) UnmarshalJSON(data []byte) error {
+func (n *Notification) UnmarshalJSON(data []byte) error {
 	var tmp notificationJson
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
