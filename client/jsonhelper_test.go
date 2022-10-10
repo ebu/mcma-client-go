@@ -1,9 +1,9 @@
 package mcmaclient
 
 import (
-	"../model"
 	"bytes"
 	"encoding/json"
+	"github.com/ebu/mcma-libraries-go/model"
 	"net/http"
 	"reflect"
 	strconv "strconv"
