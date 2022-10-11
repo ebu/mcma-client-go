@@ -113,18 +113,18 @@ func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Re
 	if err != nil {
 		return resp, err
 	}
-	// defer 404 handling to caller if specified
-	if resp.StatusCode == 404 && !throwOn404 {
+	// non-error response (with possible explicit exception for 404)
+	if resp.StatusCode < 400 || (resp.StatusCode == 404 && !throwOn404) {
 		return resp, nil
 	}
+	// non-5xx/429 means no retries, so just return the error response
+	if resp.StatusCode < 500 && resp.StatusCode != 429 {
+		var errorBody bytes.Buffer
+		if resp.Body != nil {
+			_, _ = errorBody.ReadFrom(resp.Body)
+		}
+		return resp, fmt.Errorf("%v %v returned %v: %v", req.Method, req.URL, resp.Status, errorBody.String())
+	}
 	// 5xx/429 means we retried until we hit the limit
-	if resp.StatusCode >= 500 || resp.StatusCode == 429 {
-		return resp, fmt.Errorf("failed to do %v to %v after %v ms: %v", req.Method, req.URL, start.UnixMilli()-time.Now().UnixMilli(), err)
-	}
-	// try to read the response and return it as an error
-	var errorBody bytes.Buffer
-	if resp.Body != nil {
-		_, _ = errorBody.ReadFrom(resp.Body)
-	}
-	return resp, fmt.Errorf("%v %v returned %v: %v", req.Method, req.URL, resp.Status, errorBody.String())
+	return resp, fmt.Errorf("failed to do %v to %v after %v ms: %v", req.Method, req.URL, start.UnixMilli()-time.Now().UnixMilli(), err)
 }
