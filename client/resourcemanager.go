@@ -84,7 +84,12 @@ func (resourceManager *ResourceManager) Init() error {
 		return fmt.Errorf("service resource endpoint not found")
 	}
 
-	serviceQueryResults, err := servicesEndpoint.Query(reflect.TypeOf(model.Service{}), "", nil)
+	serviceQueryResults, err := servicesEndpoint.QueryWithRetries(reflect.TypeOf(model.Service{}), "", nil, RetryOptions{
+		ShouldRetry: func(resp *http.Response, err error) bool {
+			return DefaultShouldRetry(resp, err) || resp.StatusCode == 404
+		},
+		Intervals: DefaultRetryIntervals,
+	})
 	if err != nil {
 		return err
 	}

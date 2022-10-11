@@ -18,6 +18,11 @@ type ResourceEndpointClient struct {
 	mcmaHttpClient   *McmaHttpClient
 }
 
+type QueryParameters = []struct {
+	key   string
+	value string
+}
+
 func (resourceEndpointClient *ResourceEndpointClient) getMcmaHttpClient() (*McmaHttpClient, error) {
 	if resourceEndpointClient.mcmaHttpClient != nil {
 		return resourceEndpointClient.mcmaHttpClient, nil
@@ -93,10 +98,10 @@ func (resourceEndpointClient *ResourceEndpointClient) execute(t reflect.Type, ur
 	return readJsonRespBody(resp, t)
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) Query(t reflect.Type, url string, queryParameters []struct {
-	key   string
-	value string
-}) (model.QueryResults, error) {
+func (resourceEndpointClient *ResourceEndpointClient) Query(t reflect.Type, url string, queryParameters QueryParameters) (model.QueryResults, error) {
+	return resourceEndpointClient.QueryWithRetries(t, url, queryParameters, DefaultRetryOptions)
+}
+func (resourceEndpointClient *ResourceEndpointClient) QueryWithRetries(t reflect.Type, url string, queryParameters QueryParameters, retryOpts RetryOptions) (model.QueryResults, error) {
 	var queryResults model.QueryResults
 	mcmaHttpClient, err := resourceEndpointClient.getMcmaHttpClient()
 	if err != nil {
@@ -113,7 +118,7 @@ func (resourceEndpointClient *ResourceEndpointClient) Query(t reflect.Type, url 
 		}
 	}
 
-	getResp, err := mcmaHttpClient.Get(url, true)
+	getResp, err := mcmaHttpClient.GetWithRetries(url, true, retryOpts)
 	if err != nil {
 		return queryResults, fmt.Errorf("failed to query %v: %v", url, err)
 	}
@@ -135,10 +140,10 @@ func (resourceEndpointClient *ResourceEndpointClient) Query(t reflect.Type, url 
 	return queryResults, err
 }
 
-func (resourceEndpointClient *ResourceEndpointClient) QueryMaps(url string, queryParameters []struct {
-	key   string
-	value string
-}) (model.QueryResults, error) {
+func (resourceEndpointClient *ResourceEndpointClient) QueryMaps(url string, queryParameters QueryParameters) (model.QueryResults, error) {
+	return resourceEndpointClient.QueryMapsWithRetries(url, queryParameters, DefaultRetryOptions)
+}
+func (resourceEndpointClient *ResourceEndpointClient) QueryMapsWithRetries(url string, queryParameters QueryParameters, retryOpts RetryOptions) (model.QueryResults, error) {
 	var queryResults model.QueryResults
 	mcmaHttpClient, err := resourceEndpointClient.getMcmaHttpClient()
 	if err != nil {
@@ -155,7 +160,7 @@ func (resourceEndpointClient *ResourceEndpointClient) QueryMaps(url string, quer
 		}
 	}
 
-	getResp, err := mcmaHttpClient.Get(url, true)
+	getResp, err := mcmaHttpClient.GetWithRetries(url, true, retryOpts)
 	if err != nil {
 		return queryResults, fmt.Errorf("failed to query %v: %v", url, err)
 	}
@@ -169,14 +174,20 @@ func (resourceEndpointClient *ResourceEndpointClient) QueryMaps(url string, quer
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) Get(t reflect.Type, url string) (interface{}, error) {
+	return resourceEndpointClient.GetWithRetries(t, url, DefaultRetryOptions)
+}
+func (resourceEndpointClient *ResourceEndpointClient) GetWithRetries(t reflect.Type, url string, retryOpts RetryOptions) (interface{}, error) {
 	return resourceEndpointClient.execute(t, url, nil, func(client *McmaHttpClient, url string, body *bytes.Reader) (*http.Response, error) {
-		return client.Get(url, false)
+		return client.GetWithRetries(url, false, retryOpts)
 	})
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) GetResource(url string) (map[string]interface{}, error) {
+	return resourceEndpointClient.GetResourceWithRetries(url, DefaultRetryOptions)
+}
+func (resourceEndpointClient *ResourceEndpointClient) GetResourceWithRetries(url string, retryOpts RetryOptions) (map[string]interface{}, error) {
 	var m map[string]interface{}
-	mi, err := resourceEndpointClient.Get(reflect.TypeOf(m), url)
+	mi, err := resourceEndpointClient.GetWithRetries(reflect.TypeOf(m), url, retryOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -187,28 +198,43 @@ func (resourceEndpointClient *ResourceEndpointClient) GetResource(url string) (m
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) Post(t reflect.Type, url string, body interface{}) (interface{}, error) {
+	return resourceEndpointClient.PostWithRetries(t, url, body, DefaultRetryOptions)
+}
+func (resourceEndpointClient *ResourceEndpointClient) PostWithRetries(t reflect.Type, url string, body interface{}, retryOpts RetryOptions) (interface{}, error) {
 	return resourceEndpointClient.execute(t, url, body, func(client *McmaHttpClient, url string, body *bytes.Reader) (*http.Response, error) {
-		return client.Post(url, body)
+		return client.PostWithRetries(url, body, retryOpts)
 	})
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) PostResource(url string, body map[string]interface{}) (interface{}, error) {
-	return resourceEndpointClient.Post(reflect.TypeOf(body), url, body)
+	return resourceEndpointClient.PostResourceWithRetries(url, body, DefaultRetryOptions)
+}
+func (resourceEndpointClient *ResourceEndpointClient) PostResourceWithRetries(url string, body map[string]interface{}, retryOpts RetryOptions) (interface{}, error) {
+	return resourceEndpointClient.PostWithRetries(reflect.TypeOf(body), url, body, retryOpts)
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) Put(t reflect.Type, url string, body interface{}) (interface{}, error) {
+	return resourceEndpointClient.PutWithRetries(t, url, body, DefaultRetryOptions)
+}
+func (resourceEndpointClient *ResourceEndpointClient) PutWithRetries(t reflect.Type, url string, body interface{}, retryOpts RetryOptions) (interface{}, error) {
 	return resourceEndpointClient.execute(t, url, body, func(client *McmaHttpClient, url string, body *bytes.Reader) (*http.Response, error) {
-		return client.Put(url, body)
+		return client.PutWithRetries(url, body, retryOpts)
 	})
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) PutResource(url string, body map[string]interface{}) (interface{}, error) {
-	return resourceEndpointClient.Put(reflect.TypeOf(body), url, body)
+	return resourceEndpointClient.PutResourceWithRetries(url, body, DefaultRetryOptions)
+}
+func (resourceEndpointClient *ResourceEndpointClient) PutResourceWithRetries(url string, body map[string]interface{}, retryOpts RetryOptions) (interface{}, error) {
+	return resourceEndpointClient.PutWithRetries(reflect.TypeOf(body), url, body, retryOpts)
 }
 
 func (resourceEndpointClient *ResourceEndpointClient) Delete(url string) error {
+	return resourceEndpointClient.DeleteWithRetries(url, DefaultRetryOptions)
+}
+func (resourceEndpointClient *ResourceEndpointClient) DeleteWithRetries(url string, retryOpts RetryOptions) error {
 	_, err := resourceEndpointClient.execute(nil, url, nil, func(client *McmaHttpClient, url string, body *bytes.Reader) (*http.Response, error) {
-		return client.Delete(url)
+		return client.DeleteWithRetries(url, retryOpts)
 	})
 	return err
 }

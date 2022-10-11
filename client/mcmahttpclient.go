@@ -26,53 +26,67 @@ func (nopCloser) Close() error {
 	return nil
 }
 
+func getHttpErrorResponse(req *http.Request, resp *http.Response) error {
+	// return an error with details from the body if possible
+	var errorBody bytes.Buffer
+	if resp.Body != nil {
+		_, _ = errorBody.ReadFrom(resp.Body)
+	}
+	return fmt.Errorf("%v %v returned %v: %v", req.Method, req.URL, resp.Status, errorBody.String())
+}
+
 func (client *McmaHttpClient) Get(url string, throwOn404 bool) (*http.Response, error) {
+	return client.GetWithRetries(url, throwOn404, DefaultRetryOptions)
+}
+func (client *McmaHttpClient) GetWithRetries(url string, throwOn404 bool, retryOpts RetryOptions) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	return client.Send(req, throwOn404)
+	return client.SendWithRetries(req, throwOn404, retryOpts)
 }
 
 func (client *McmaHttpClient) Post(url string, body *bytes.Reader) (*http.Response, error) {
+	return client.PostWithRetries(url, body, DefaultRetryOptions)
+}
+func (client *McmaHttpClient) PostWithRetries(url string, body *bytes.Reader, retryOpts RetryOptions) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, nopCloser{body})
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	return client.Send(req, true)
+	return client.SendWithRetries(req, true, retryOpts)
 }
 
 func (client *McmaHttpClient) Put(url string, body *bytes.Reader) (*http.Response, error) {
+	return client.PutWithRetries(url, body, DefaultRetryOptions)
+}
+func (client *McmaHttpClient) PutWithRetries(url string, body *bytes.Reader, retryOpts RetryOptions) (*http.Response, error) {
 	req, err := http.NewRequest("PUT", url, nopCloser{body})
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	return client.Send(req, true)
+	return client.SendWithRetries(req, true, retryOpts)
 }
 
 func (client *McmaHttpClient) Delete(url string) (*http.Response, error) {
+	return client.DeleteWithRetries(url, DefaultRetryOptions)
+}
+func (client *McmaHttpClient) DeleteWithRetries(url string, retryOpts RetryOptions) (*http.Response, error) {
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return nil, err
 	}
-	return client.Send(req, true)
+	return client.SendWithRetries(req, true, retryOpts)
 }
 
 func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Response, error) {
+	return client.SendWithRetries(req, throwOn404, DefaultRetryOptions)
+}
+
+func (client *McmaHttpClient) SendWithRetries(req *http.Request, throwOn404 bool, retryOpts RetryOptions) (*http.Response, error) {
 	start := time.Now()
-	backOffDurations := []time.Duration{
-		250 * time.Millisecond,
-		500 * time.Millisecond,
-		1 * time.Second,
-		2 * time.Second,
-		5 * time.Second,
-		15 * time.Second,
-		30 * time.Second,
-		45 * time.Second,
-		1 * time.Minute,
-	}
 
 	if client.tracker != nil {
 		tracker := req.Header.Get("mcma-tracker")
@@ -97,34 +111,23 @@ func (client *McmaHttpClient) Send(req *http.Request, throwOn404 bool) (*http.Re
 		}
 	}
 
-	trySendReq := func() (bool, *http.Response, error) {
-		resp, err := client.httpClient.Do(req)
-		done := err == nil && resp.StatusCode < 500 && resp.StatusCode != 429
-		return done, resp, err
-	}
-	done, resp, err := trySendReq()
-	if !done {
-		for i := 0; i < len(backOffDurations); i++ {
-			time.Sleep(backOffDurations[i])
-			done, resp, err = trySendReq()
-		}
-	}
+	done, resp, err := ExecuteWithRetries(client.httpClient, req, retryOpts)
+
 	// connectivity/network or code error
 	if err != nil {
 		return resp, err
 	}
-	// non-error response (with possible explicit exception for 404)
+
+	// we retried until we hit the limit
+	if !done {
+		lastRespErr := getHttpErrorResponse(req, resp)
+		return resp, fmt.Errorf("failed to do %v to %v after %v ms - last err: %v", req.Method, req.URL, start.UnixMilli()-time.Now().UnixMilli(), lastRespErr)
+	}
+
+	// non-error response (or possible explicit exception for 404)
 	if resp.StatusCode < 400 || (resp.StatusCode == 404 && !throwOn404) {
 		return resp, nil
 	}
-	// non-5xx/429 means no retries, so just return the error response
-	if resp.StatusCode < 500 && resp.StatusCode != 429 {
-		var errorBody bytes.Buffer
-		if resp.Body != nil {
-			_, _ = errorBody.ReadFrom(resp.Body)
-		}
-		return resp, fmt.Errorf("%v %v returned %v: %v", req.Method, req.URL, resp.Status, errorBody.String())
-	}
-	// 5xx/429 means we retried until we hit the limit
-	return resp, fmt.Errorf("failed to do %v to %v after %v ms: %v", req.Method, req.URL, start.UnixMilli()-time.Now().UnixMilli(), err)
+
+	return resp, getHttpErrorResponse(req, resp)
 }
