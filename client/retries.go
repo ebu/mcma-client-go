@@ -37,13 +37,18 @@ func ExecuteWithDefaultRetries(client *http.Client, req *http.Request) (bool, *h
 
 func ExecuteWithRetries(client *http.Client, req *http.Request, opts RetryOptions) (bool, *http.Response, error) {
 	res, err := client.Do(req)
-	retry := opts.ShouldRetry(res, err)
-	if retry {
-		for i := 0; i < len(opts.Intervals); i++ {
-			time.Sleep(opts.Intervals[i])
-			res, err = client.Do(req)
-			retry = opts.ShouldRetry(res, err)
+	if !opts.ShouldRetry(res, err) {
+		return true, res, err
+	}
+
+	for i := 0; i < len(opts.Intervals); i++ {
+		time.Sleep(opts.Intervals[i])
+
+		res, err = client.Do(req)
+		if !opts.ShouldRetry(res, err) {
+			return true, res, err
 		}
 	}
-	return !retry, res, err
+
+	return false, res, err
 }
