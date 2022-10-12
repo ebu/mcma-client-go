@@ -11,7 +11,7 @@ type RetryOptions struct {
 }
 
 var DefaultShouldRetry = func(resp *http.Response, err error) bool {
-	return err == nil && resp.StatusCode < 500 && resp.StatusCode != 429
+	return err != nil || resp.StatusCode >= 500 || resp.StatusCode == 429
 }
 
 var DefaultRetryIntervals = []time.Duration{
@@ -37,13 +37,13 @@ func ExecuteWithDefaultRetries(client *http.Client, req *http.Request) (bool, *h
 
 func ExecuteWithRetries(client *http.Client, req *http.Request, opts RetryOptions) (bool, *http.Response, error) {
 	res, err := client.Do(req)
-	done := opts.ShouldRetry(res, err)
-	if !done {
+	retry := opts.ShouldRetry(res, err)
+	if retry {
 		for i := 0; i < len(opts.Intervals); i++ {
 			time.Sleep(opts.Intervals[i])
 			res, err = client.Do(req)
-			done = opts.ShouldRetry(res, err)
+			retry = opts.ShouldRetry(res, err)
 		}
 	}
-	return done, res, err
+	return !retry, res, err
 }
