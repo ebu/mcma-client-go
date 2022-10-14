@@ -12,49 +12,24 @@ import (
 )
 
 type ResourceManager struct {
-	authProvider          *AuthProvider
-	httpClient            *http.Client
-	mcmaHttpClient        *McmaHttpClient
-	servicesUrl           string
-	servicesAuthType      string
-	tracker               *model.McmaTracker
-	services              []*ServiceClient
-	serviceRegistryClient *ServiceClient
-	initMutex             sync.Mutex
-}
-
-func (resourceManager *ResourceManager) getServiceRegistryData() model.Service {
-	return model.Service{
-		Name:     "Service Registry",
-		AuthType: resourceManager.servicesAuthType,
-		Resources: []model.ResourceEndpoint{
-			{
-				ResourceType: "Service",
-				HttpEndpoint: resourceManager.servicesUrl,
-			},
-		},
-	}
+	authProvider            *AuthProvider
+	httpClient              *http.Client
+	mcmaHttpClient          *McmaHttpClient
+	serviceRegistryUrl      string
+	serviceRegistryAuthType string
+	tracker                 *model.McmaTracker
+	services                []*ServiceClient
+	initMutex               sync.Mutex
 }
 
 func (resourceManager *ResourceManager) getMcmaHttpClient() *McmaHttpClient {
 	if resourceManager.mcmaHttpClient == nil {
 		resourceManager.mcmaHttpClient = &McmaHttpClient{
-			httpClient: resourceManager.httpClient,
+			httpClient:    resourceManager.httpClient,
+			authenticator: resourceManager.authProvider.GetDefault(),
 		}
 	}
 	return resourceManager.mcmaHttpClient
-}
-
-func (resourceManager *ResourceManager) getServiceRegistryClient() *ServiceClient {
-	if resourceManager.serviceRegistryClient == nil {
-		resourceManager.serviceRegistryClient = &ServiceClient{
-			authProvider: resourceManager.authProvider,
-			httpClient:   resourceManager.httpClient,
-			service:      resourceManager.getServiceRegistryData(),
-			tracker:      resourceManager.tracker,
-		}
-	}
-	return resourceManager.serviceRegistryClient
 }
 
 func (resourceManager *ResourceManager) getResourceEndpoint(url string) (*ResourceEndpointClient, error) {
@@ -76,7 +51,31 @@ func (resourceManager *ResourceManager) getResourceEndpoint(url string) (*Resour
 }
 
 func (resourceManager *ResourceManager) Init() error {
-	serviceRegistryClient := resourceManager.getServiceRegistryClient()
+	serviceRegistryUrl := resourceManager.serviceRegistryUrl
+	if serviceRegistryUrl[len(serviceRegistryUrl)-1] == '/' {
+		serviceRegistryUrl = serviceRegistryUrl[:len(serviceRegistryUrl)-1]
+	}
+
+	serviceRegistryClient := &ServiceClient{
+		authProvider: resourceManager.authProvider,
+		httpClient:   resourceManager.httpClient,
+		service: model.Service{
+			Name:     "Service Registry",
+			AuthType: resourceManager.serviceRegistryAuthType,
+			Resources: []model.ResourceEndpoint{
+				{
+					ResourceType: "Service",
+					HttpEndpoint: serviceRegistryUrl + "/services",
+				},
+				{
+					ResourceType: "JobProfile",
+					HttpEndpoint: serviceRegistryUrl + "/job-profiles",
+				},
+			},
+		},
+		tracker: resourceManager.tracker,
+	}
+
 	resourceManager.services = append(resourceManager.services[:0], serviceRegistryClient)
 
 	servicesEndpoint, found := serviceRegistryClient.GetResourceEndpointClientByType(reflect.TypeOf(model.Service{}))
@@ -101,6 +100,9 @@ func (resourceManager *ResourceManager) Init() error {
 			httpClient:   resourceManager.httpClient,
 			service:      service,
 			tracker:      resourceManager.tracker,
+		}
+		if service.Name == serviceRegistryClient.service.Name && resourceManager.services[0] == serviceRegistryClient {
+			resourceManager.services = resourceManager.services[1:]
 		}
 		resourceManager.services = append(resourceManager.services, serviceClient)
 	}
@@ -424,38 +426,38 @@ func (resourceManager *ResourceManager) AddAuth(authType string, authenticator A
 	resourceManager.authProvider.Add(authType, authenticator)
 }
 
-func NewResourceManager(servicesUrl string, servicesAuthType string) ResourceManager {
+func NewResourceManager(serviceRegistryUrl string, serviceRegistryAuthType string) ResourceManager {
 	return ResourceManager{
-		authProvider:     newAuthProvider(),
-		httpClient:       &http.Client{},
-		servicesUrl:      servicesUrl,
-		servicesAuthType: servicesAuthType,
+		authProvider:            newAuthProvider(),
+		httpClient:              &http.Client{},
+		serviceRegistryUrl:      serviceRegistryUrl,
+		serviceRegistryAuthType: serviceRegistryAuthType,
 	}
 }
 
-func NewResourceManagerNoAuth(servicesUrl string) ResourceManager {
+func NewResourceManagerNoAuth(serviceRegistryUrl string) ResourceManager {
 	return ResourceManager{
-		authProvider: newAuthProvider(),
-		httpClient:   &http.Client{},
-		servicesUrl:  servicesUrl,
+		authProvider:       newAuthProvider(),
+		httpClient:         &http.Client{},
+		serviceRegistryUrl: serviceRegistryUrl,
 	}
 }
 
-func NewResourceManagerWithTracker(servicesUrl string, servicesAuthType string, tracker *model.McmaTracker) ResourceManager {
+func NewResourceManagerWithTracker(serviceRegistryUrl string, serviceRegistryAuthType string, tracker *model.McmaTracker) ResourceManager {
 	return ResourceManager{
-		authProvider:     newAuthProvider(),
-		httpClient:       &http.Client{},
-		servicesUrl:      servicesUrl,
-		servicesAuthType: servicesAuthType,
-		tracker:          tracker,
+		authProvider:            newAuthProvider(),
+		httpClient:              &http.Client{},
+		serviceRegistryUrl:      serviceRegistryUrl,
+		serviceRegistryAuthType: serviceRegistryAuthType,
+		tracker:                 tracker,
 	}
 }
 
-func NewResourceManagerWithTrackerNoAuth(servicesUrl string, tracker *model.McmaTracker) ResourceManager {
+func NewResourceManagerWithTrackerNoAuth(serviceRegistryUrl string, tracker *model.McmaTracker) ResourceManager {
 	return ResourceManager{
-		authProvider: newAuthProvider(),
-		httpClient:   &http.Client{},
-		servicesUrl:  servicesUrl,
-		tracker:      tracker,
+		authProvider:       newAuthProvider(),
+		httpClient:         &http.Client{},
+		serviceRegistryUrl: serviceRegistryUrl,
+		tracker:            tracker,
 	}
 }
