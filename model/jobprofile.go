@@ -14,7 +14,7 @@ type JobProfile struct {
 	InputParameters         []JobParameter
 	OutputParameters        []JobParameter
 	OptionalInputParameters []JobParameter
-	CustomProperties        map[string]interface{}
+	Custom                  map[string]interface{}
 }
 
 type jobProfileJson struct {
@@ -26,7 +26,7 @@ type jobProfileJson struct {
 	InputParameters         []JobParameter         `json:"inputParameters"`
 	OutputParameters        []JobParameter         `json:"outputParameters"`
 	OptionalInputParameters []JobParameter         `json:"optionalInputParameters"`
-	CustomProperties        map[string]interface{} `json:"customProperties"`
+	Custom                  map[string]interface{} `json:"custom"`
 }
 
 var JobProfileType = "JobProfile"
@@ -48,7 +48,7 @@ func (jp JobProfile) MarshalJSON() ([]byte, error) {
 		InputParameters:         jp.InputParameters,
 		OutputParameters:        jp.OutputParameters,
 		OptionalInputParameters: jp.OptionalInputParameters,
-		CustomProperties:        jp.CustomProperties,
+		Custom:                  jp.Custom,
 	})
 }
 
@@ -66,7 +66,7 @@ func (jp *JobProfile) UnmarshalJSON(data []byte) error {
 	jp.InputParameters = tmp.InputParameters
 	jp.OutputParameters = tmp.OutputParameters
 	jp.OptionalInputParameters = tmp.OptionalInputParameters
-	jp.CustomProperties = tmp.CustomProperties
+	jp.Custom = tmp.Custom
 
 	return nil
 }
