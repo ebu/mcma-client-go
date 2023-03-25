@@ -17,20 +17,22 @@ type Service struct {
 	JobProfileIds   []string
 	InputLocations  []Locator
 	OutputLocations []Locator
+	Custom          map[string]interface{}
 }
 
 type serviceJson struct {
-	Type            *string            `json:"@type"`
-	Id              *string            `json:"id"`
-	DateCreated     time.Time          `json:"dateCreated"`
-	DateModified    time.Time          `json:"dateModified"`
-	Name            *string            `json:"name"`
-	AuthType        *string            `json:"authType"`
-	Resources       []ResourceEndpoint `json:"resources"`
-	JobType         *string            `json:"jobType"`
-	JobProfileIds   []string           `json:"jobProfileIds"`
-	InputLocations  []Locator          `json:"inputLocations"`
-	OutputLocations []Locator          `json:"outputLocations"`
+	Type            *string                `json:"@type"`
+	Id              *string                `json:"id"`
+	DateCreated     time.Time              `json:"dateCreated"`
+	DateModified    time.Time              `json:"dateModified"`
+	Name            *string                `json:"name"`
+	AuthType        *string                `json:"authType"`
+	Resources       []ResourceEndpoint     `json:"resources"`
+	JobType         *string                `json:"jobType"`
+	JobProfileIds   []string               `json:"jobProfileIds"`
+	InputLocations  []Locator              `json:"inputLocations"`
+	OutputLocations []Locator              `json:"outputLocations"`
+	Custom          map[string]interface{} `json:"custom"`
 }
 
 var ServiceType = "Service"

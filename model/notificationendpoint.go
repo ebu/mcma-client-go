@@ -6,12 +6,14 @@ type NotificationEndpoint struct {
 	Type         string
 	Id           string
 	HttpEndpoint string
+	Custom       map[string]interface{}
 }
 
 type notificationEndpointJson struct {
-	Type         *string `json:"@type"`
-	Id           *string `json:"id"`
-	HttpEndpoint *string `json:"httpEndpoint"`
+	Type         *string                `json:"@type"`
+	Id           *string                `json:"id"`
+	HttpEndpoint *string                `json:"httpEndpoint"`
+	Custom       map[string]interface{} `json:"custom"`
 }
 
 var NotificationEndpointType = "NotificationEndpoint"

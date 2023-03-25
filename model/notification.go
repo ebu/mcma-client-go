@@ -6,12 +6,14 @@ type Notification struct {
 	Type    string
 	Source  string
 	Content interface{}
+	Custom  map[string]interface{}
 }
 
 type notificationJson struct {
-	Type    *string     `json:"@type"`
-	Source  *string     `json:"source"`
-	Content interface{} `json:"content"`
+	Type    *string                `json:"@type"`
+	Source  *string                `json:"source"`
+	Content interface{}            `json:"content"`
+	Custom  map[string]interface{} `json:"custom"`
 }
 
 var NotificationType = "Notification"
