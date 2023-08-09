@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/ebu/mcma-libraries-go/model"
@@ -55,6 +56,7 @@ func (client *McmaHttpClient) PostWithRetries(url string, body *bytes.Reader, re
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Length", strconv.Itoa(body.Len()))
 	return client.SendWithRetries(req, true, retryOpts)
 }
 
@@ -67,6 +69,7 @@ func (client *McmaHttpClient) PutWithRetries(url string, body *bytes.Reader, ret
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Length", strconv.Itoa(body.Len()))
 	return client.SendWithRetries(req, true, retryOpts)
 }
 
