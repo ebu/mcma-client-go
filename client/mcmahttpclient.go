@@ -5,9 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/ebu/mcma-libraries-go/model"
@@ -17,14 +15,6 @@ type McmaHttpClient struct {
 	httpClient    *http.Client
 	authenticator *Authenticator
 	tracker       *model.McmaTracker
-}
-
-type nopCloser struct {
-	io.ReadSeeker
-}
-
-func (nopCloser) Close() error {
-	return nil
 }
 
 func getHttpErrorResponse(req *http.Request, resp *http.Response) error {
@@ -51,12 +41,11 @@ func (client *McmaHttpClient) Post(url string, body *bytes.Reader) (*http.Respon
 	return client.PostWithRetries(url, body, DefaultRetryOptions)
 }
 func (client *McmaHttpClient) PostWithRetries(url string, body *bytes.Reader, retryOpts RetryOptions) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, nopCloser{body})
+	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Content-Length", strconv.Itoa(body.Len()))
 	return client.SendWithRetries(req, true, retryOpts)
 }
 
@@ -64,12 +53,11 @@ func (client *McmaHttpClient) Put(url string, body *bytes.Reader) (*http.Respons
 	return client.PutWithRetries(url, body, DefaultRetryOptions)
 }
 func (client *McmaHttpClient) PutWithRetries(url string, body *bytes.Reader, retryOpts RetryOptions) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", url, nopCloser{body})
+	req, err := http.NewRequest("PUT", url, body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Content-Length", strconv.Itoa(body.Len()))
 	return client.SendWithRetries(req, true, retryOpts)
 }
 
