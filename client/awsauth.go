@@ -2,12 +2,13 @@ package mcmaclient
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/signer/v4"
 	"io"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/signer/v4"
 )
 
 type AWS4Authenticator struct {

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"testing"
 
-	"mcma-libraries-go/model"
+	"github.com/ebu/mcma-libraries-go/model"
 )
 
 func TestGetJsonReqBody(t *testing.T) {

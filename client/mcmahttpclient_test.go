@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"mcma-libraries-go/model"
+	"github.com/ebu/mcma-libraries-go/model"
 )
 
 func TestSeekableReqBody(t *testing.T) {

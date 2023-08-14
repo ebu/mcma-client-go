@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"mcma-libraries-go/model"
+	"github.com/ebu/mcma-libraries-go/model"
 )
 
 type McmaHttpClient struct {

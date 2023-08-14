@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"mcma-libraries-go/model"
+	"github.com/ebu/mcma-libraries-go/model"
 )
 
 type ResourceEndpointClient struct {
