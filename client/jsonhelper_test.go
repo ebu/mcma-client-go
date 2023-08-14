@@ -6,7 +6,7 @@ import (
 	"github.com/ebu/mcma-libraries-go/model"
 	"net/http"
 	"reflect"
-	strconv "strconv"
+	"strconv"
 	"testing"
 )
 

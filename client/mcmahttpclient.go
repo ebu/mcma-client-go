@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -17,6 +18,14 @@ type McmaHttpClient struct {
 	tracker       *model.McmaTracker
 }
 
+type nopCloser struct {
+	io.ReadSeeker
+}
+
+func (nopCloser) Close() error {
+	return nil
+}
+
 func getHttpErrorResponse(req *http.Request, resp *http.Response) error {
 	// return an error with details from the body if possible
 	var errorBody bytes.Buffer
@@ -26,11 +35,27 @@ func getHttpErrorResponse(req *http.Request, resp *http.Response) error {
 	return fmt.Errorf("%v %v returned %v: %v", req.Method, req.URL, resp.Status, errorBody.String())
 }
 
+func newHttpRequest(method string, url string, body *bytes.Reader) (*http.Request, error) {
+	req, err := http.NewRequest(method, url, nopCloser{body})
+	if err != nil {
+		return nil, err
+	}
+	if body != nil {
+		req.ContentLength = int64(body.Len())
+		snapshot := *body
+		req.GetBody = func() (io.ReadCloser, error) {
+			r := snapshot
+			return nopCloser{&r}, nil
+		}
+	}
+	return req, nil
+}
+
 func (client *McmaHttpClient) Get(url string, throwOn404 bool) (*http.Response, error) {
 	return client.GetWithRetries(url, throwOn404, DefaultRetryOptions)
 }
 func (client *McmaHttpClient) GetWithRetries(url string, throwOn404 bool, retryOpts RetryOptions) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := newHttpRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +66,7 @@ func (client *McmaHttpClient) Post(url string, body *bytes.Reader) (*http.Respon
 	return client.PostWithRetries(url, body, DefaultRetryOptions)
 }
 func (client *McmaHttpClient) PostWithRetries(url string, body *bytes.Reader, retryOpts RetryOptions) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, body)
+	req, err := newHttpRequest("POST", url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +78,7 @@ func (client *McmaHttpClient) Put(url string, body *bytes.Reader) (*http.Respons
 	return client.PutWithRetries(url, body, DefaultRetryOptions)
 }
 func (client *McmaHttpClient) PutWithRetries(url string, body *bytes.Reader, retryOpts RetryOptions) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", url, body)
+	req, err := newHttpRequest("PUT", url, body)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +90,7 @@ func (client *McmaHttpClient) Delete(url string) (*http.Response, error) {
 	return client.DeleteWithRetries(url, DefaultRetryOptions)
 }
 func (client *McmaHttpClient) DeleteWithRetries(url string, retryOpts RetryOptions) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", url, nil)
+	req, err := newHttpRequest("DELETE", url, nil)
 	if err != nil {
 		return nil, err
 	}
