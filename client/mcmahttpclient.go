@@ -36,7 +36,13 @@ func getHttpErrorResponse(req *http.Request, resp *http.Response) error {
 }
 
 func newHttpRequest(method string, url string, body *bytes.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, url, nopCloser{body})
+	var req *http.Request
+	var err error
+	if body != nil {
+		req, err = http.NewRequest(method, url, nopCloser{body})
+	} else {
+		req, err = http.NewRequest(method, url, nil)
+	}
 	if err != nil {
 		return nil, err
 	}
