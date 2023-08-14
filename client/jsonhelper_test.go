@@ -3,11 +3,12 @@ package mcmaclient
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/ebu/mcma-libraries-go/model"
 	"net/http"
 	"reflect"
 	"strconv"
 	"testing"
+
+	"mcma-libraries-go/model"
 )
 
 func TestGetJsonReqBody(t *testing.T) {

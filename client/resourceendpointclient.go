@@ -3,10 +3,11 @@ package mcmaclient
 import (
 	"bytes"
 	"fmt"
-	"github.com/ebu/mcma-libraries-go/model"
 	"net/http"
 	"reflect"
 	"strings"
+
+	"mcma-libraries-go/model"
 )
 
 type ResourceEndpointClient struct {

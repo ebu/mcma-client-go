@@ -1,10 +1,11 @@
 package mcmaclient
 
 import (
-	"github.com/ebu/mcma-libraries-go/model"
 	"net/http"
 	"reflect"
 	"strings"
+
+	"mcma-libraries-go/model"
 )
 
 type ServiceClient struct {

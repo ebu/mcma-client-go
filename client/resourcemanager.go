@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ebu/mcma-libraries-go/model"
+	"mcma-libraries-go/model"
 )
 
 type ResourceManager struct {
