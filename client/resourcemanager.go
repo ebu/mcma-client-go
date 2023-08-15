@@ -95,16 +95,15 @@ func (resourceManager *ResourceManager) Init() error {
 
 	for _, r := range serviceQueryResults.Results {
 		service := r.(model.Service)
-		serviceClient := &ServiceClient{
-			authProvider: resourceManager.authProvider,
-			httpClient:   resourceManager.httpClient,
-			service:      service,
-			tracker:      resourceManager.tracker,
+		if service.Name != serviceRegistryClient.service.Name {
+			serviceClient := &ServiceClient{
+				authProvider: resourceManager.authProvider,
+				httpClient:   resourceManager.httpClient,
+				service:      service,
+				tracker:      resourceManager.tracker,
+			}
+			resourceManager.services = append(resourceManager.services, serviceClient)
 		}
-		if service.Name == serviceRegistryClient.service.Name && resourceManager.services[0] == serviceRegistryClient {
-			resourceManager.services = resourceManager.services[1:]
-		}
-		resourceManager.services = append(resourceManager.services, serviceClient)
 	}
 
 	return nil
